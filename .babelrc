@@ -1,0 +1,11 @@
+{
+  "presets": ["es2015", "stage-0"],
+  "ignore": [
+    "dist/*.js",
+    "packages/**/*.js"
+  ],
+  "plugins":[
+    "transform-node-env-inline",
+    "version-inline"
+  ]
+}
