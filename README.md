@@ -1,25 +1,25 @@
-# super-fetch
+# sugar-fetch
 
-super-fetch will provide you with a strong ability to request resource management, at the same time, you can use it very simply
+sugar-fetch will provide you with a strong ability to request resource management, at the same time, you can use it very simply
 
 # Installation
 
 You can install with npm.
 
 ```
-npm install super-fetch
+npm install sugar-fetch
 
 ```
 
 # Usage
 
-The super-fetch not only supports any request method, but also supports jsonp request, and it also supports request/response global interceptor.
+The sugar-fetch not only supports any request method, but also supports jsonp request, and it also supports request/response global interceptor.
 
 ## Fetch something in sample way
 
 ```
 
-import {fetch} from 'super-fetch'
+import {fetch} from 'sugar-fetch'
 
 fetch('http://xxxx',{
 	params:{
@@ -45,7 +45,7 @@ fetch({
 
 ```
 
-import {fetch} from 'super-fetch'
+import {fetch} from 'sugar-fetch'
 
 const complex_params = {
     param1:'param1',
@@ -67,7 +67,7 @@ fetch({
 ## Fetch jsonp
 
 ```
-import {fetch} from 'super-fetch'
+import {fetch} from 'sugar-fetch'
 
 fetch({
     url:'http://xxxx',
@@ -86,7 +86,7 @@ fetch({
 ### CORS request
 
 ```
-import {fetch} from 'super-fetch'
+import {fetch} from 'sugar-fetch'
 
 fetch({
     url:'http://xxxx',
@@ -103,7 +103,7 @@ fetch({
 ### same domain
 
 ```
-import {fetch} from 'super-fetch'
+import {fetch} from 'sugar-fetch'
 
 fetch({
     url:'http://xxxx',
@@ -121,7 +121,7 @@ fetch({
 
 ```
 
-import {fetch} from 'super-fetch'
+import {fetch} from 'sugar-fetch'
 
 
 fetch({
@@ -142,7 +142,7 @@ fetch({
 ## Use interceptor to intercept requests
 
 ```
-import {fetch,interceptor} from 'super-fetch'
+import {fetch,interceptor} from 'sugar-fetch'
 
 
 interceptor({
@@ -171,7 +171,7 @@ fetch({
 ## Use the resource API to abstract your requests
 
 ```
-import {resource} from 'super-fetch'
+import {resource} from 'sugar-fetch'
 
 const getSiteInfo = resource('http://xxxxx',{/** options **/})
 const getUserInfo = resource({
@@ -200,7 +200,7 @@ getCombineInfo({
 
 ```
 
-import {resource} from 'super-fetch'
+import {resource} from 'sugar-fetch'
 
 const getSiteInfo = resource('/{id}?xxx')
 
