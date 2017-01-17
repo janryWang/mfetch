@@ -3,7 +3,7 @@ module.exports = {
         build: {
             default: "NODE_ENV=development babel ./src --out-dir ./lib --copy-files",
             prod: "NODE_ENV=production node bin --script ./build --config ./build --tag prod",
-            docs: "NODE_ENV=development node bin --script ./build --config ./build --tag docs"
+            dev: "NODE_ENV=development node bin --script ./build --config ./build --tag dev"
         },
         lint: {
 

@@ -15,9 +15,9 @@ module.exports = {
         format: 'umd',
         moduleName: moduleName()
     },
-    'docs': {
+    'dev': {
         entry: 'src/index.js',
-        dest: 'docs/index.js',
+        dest: 'dist/index.js',
         format: 'umd',
         moduleName: moduleName()
     },

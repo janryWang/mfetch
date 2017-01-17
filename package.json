@@ -1,10 +1,10 @@
 {
   "name": "mfetch",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "",
   "main": "./lib",
   "scripts": {
-    "build": "nps build,build.prod",
+    "build": "nps build,build.prod,build.dev",
     "test": "nps test.unit",
     "pub": "pub",
     "test:cover": "nps test.cover",
