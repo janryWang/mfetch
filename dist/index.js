@@ -743,6 +743,20 @@ function json2formdata(object) {
     return form;
 }
 
+function formdata2json(form){
+    var result = {}
+    for (var i = 0, list = form.keys(); i < list.length; i += 1) {
+        var key = list[i];
+
+        if (!result.hasOwnProperty(key)) {
+            result[key] = form.get(key)
+        } else {
+            result[key] = form.getAll(key)
+        }
+    }
+    return result
+}
+
 var cleanMs = function (str){
     return lowerCase$1(String(str)).replace(/\s+/ig,'')
 }
@@ -1220,54 +1234,63 @@ var parseUrl = function (url) {
     return ac
 }
 
-var appendUrl = function (url, params) {
+var appendUrl = function (ref){
+    var query_string = ref.query_string;
+
+    return function (url, params) {
     var ac = parseUrl(url)
-    ac.search = index$1.stringify(params)
+    ac.search = query_string.stringify(params)
     return ac.href
+};
 }
 
-var extractUrl = function (url) {
-    return index$1.parse(
-        index$1.extract(String(url))
+var extractUrl = function (ref){
+    var query_string = ref.query_string;
+
+    return function (url) {
+    return query_string.parse(
+        query_string.extract(String(url))
     )
+};
 }
 
 
-var extractParams = function (params) {
+var extractParams = function (ref){
+    var query_string = ref.query_string;
+    var form_data = ref.form_data;
+
+    return function (params) {
     var result = {}
     if(isStr$1(params)){
-        return index$1.parse(params)
+        return query_string.parse(params)
     } else if(isForm(params)){
-        for (var i = 0, list = params.keys(); i < list.length; i += 1) {
-            var key = list[i];
-
-            if (!result.hasOwnProperty(key)) {
-                result[key] = params.get(key)
-            } else {
-                result[key] = params.getAll(key)
-            }
-        }
-        return result
+        return form_data.parse(params)
     } else if(isObj$1(params)){
         return params
     } else {
         return result
     }
+};
 }
 
 
 
-var transformParams = function (options,params){
+var transformParams = function (ref){
+    var query_string = ref.query_string;
+    var form_data = ref.form_data;
+
+    return function (options,params){
 
     var is = function (type){ return contentTypeIs(options,type); }
 
     if(is(['application','json'])){
         return JSON.stringify(params)
     } else if(is(['multipart','formdata'])){
-        return json2formdata(params)
+        return form_data.formify(params)
     } else if(is(['application','x-www-form-urlencoded'])){
-        return index$1.stringify(params)
+        return query_string.stringify(params)
     }
+};
 }
 
 var filterParams = function (params,names){
@@ -1288,13 +1311,37 @@ var pickParams = function (params,names){
     },{})
 }
 
+var createSerializer = function (context,options){ return function (method){
+    var args = [], len = arguments.length - 1;
+    while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
+
+    return method(context.post('serializer',options)).apply(void 0, args)
+}; }
+
 var params = function (params) { return ({
+
+    processSerializer: function processSerializer(options){
+        return {
+            query_string:{
+                parse:index$1.parse,
+                stringify:index$1.stringify,
+                extract:index$1.extract
+            },
+            form_data:{
+                parse:formdata2json,
+                formify:json2formdata
+            }
+        }
+    },
+
     processOption: function processOption(options, previous) {
         options = previous(options)
 
         var varNames = options.uri ? options.uri.varNames : []
 
-        params = extractParams(params)
+        var serialize = createSerializer(this,options)
+
+        params = serialize(extractParams,params)
 
         options.url = options.uri ? options.uri.fill(pickParams(params,varNames)) : options.url
 
@@ -1306,20 +1353,20 @@ var params = function (params) { return ({
             case 'head':
 
                 var url_params = Object.assign(
-                    extractUrl(options.url),
+                    serialize(extractUrl,options.url),
                     filterParams(params,varNames)
                 )
 
-                options.url = appendUrl(options.url, url_params)
+                options.url = serialize(appendUrl,options.url,url_params)
 
                 return options
 
 
             default:
 
-                options.body = transformParams(options,
+                options.body = serialize(transformParams,options,
                     Object.assign(
-                        extractParams(options.body),
+                        serialize(extractParams,options.body),
                         filterParams(params,varNames)
                     )
                 )

@@ -102,6 +102,18 @@ export function json2formdata(object) {
     return form;
 }
 
+export function formdata2json(form){
+    const result = {}
+    for (let key of form.keys()) {
+        if (!result.hasOwnProperty(key)) {
+            result[key] = form.get(key)
+        } else {
+            result[key] = form.getAll(key)
+        }
+    }
+    return result
+}
+
 export const cleanMs = (str)=>{
     return lowerCase(String(str)).replace(/\s+/ig,'')
 }

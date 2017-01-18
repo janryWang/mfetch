@@ -4,7 +4,7 @@
  * 
  */
 
-import { isStr, isObj,isForm ,getMethod,lowerCase,json2formdata,contentTypeIs} from '../lang'
+import { isStr, isObj,isForm ,getMethod,lowerCase,json2formdata,contentTypeIs,formdata2json} from '../lang'
 import qs from 'query-string'
 
 
@@ -14,32 +14,25 @@ const parseUrl = (url) => {
     return ac
 }
 
-const appendUrl = (url, params) => {
+const appendUrl = ({query_string})=>(url, params) => {
     const ac = parseUrl(url)
-    ac.search = qs.stringify(params)
+    ac.search = query_string.stringify(params)
     return ac.href
 }
 
-const extractUrl = (url) => {
-    return qs.parse(
-        qs.extract(String(url))
+const extractUrl = ({query_string})=>(url) => {
+    return query_string.parse(
+        query_string.extract(String(url))
     )
 }
 
 
-const extractParams = (params) => {
+const extractParams = ({query_string,form_data})=>(params) => {
     const result = {}
     if(isStr(params)){
-        return qs.parse(params)
+        return query_string.parse(params)
     } else if(isForm(params)){
-        for (let key of params.keys()) {
-            if (!result.hasOwnProperty(key)) {
-                result[key] = params.get(key)
-            } else {
-                result[key] = params.getAll(key)
-            }
-        }
-        return result
+        return form_data.parse(params)
     } else if(isObj(params)){
         return params
     } else {
@@ -49,16 +42,16 @@ const extractParams = (params) => {
 
 
 
-const transformParams = (options,params)=>{
+const transformParams = ({query_string,form_data})=>(options,params)=>{
 
     const is = type=>contentTypeIs(options,type)
 
     if(is(['application','json'])){
         return JSON.stringify(params)
     } else if(is(['multipart','formdata'])){
-        return json2formdata(params)
+        return form_data.formify(params)
     } else if(is(['application','x-www-form-urlencoded'])){
-        return qs.stringify(params)
+        return query_string.stringify(params)
     }
 }
 
@@ -80,13 +73,34 @@ const pickParams = (params,names)=>{
     },{})
 }
 
+const createSerializer = (context,options)=>(method,...args)=>{
+    return method(context.post('serializer',options))(...args)
+}
+
 export const params = (params) => ({
+
+    processSerializer(options){
+        return {
+            query_string:{
+                parse:qs.parse,
+                stringify:qs.stringify,
+                extract:qs.extract
+            },
+            form_data:{
+                parse:formdata2json,
+                formify:json2formdata
+            }
+        }
+    },
+
     processOption(options, previous) {
         options = previous(options)
 
         const varNames = options.uri ? options.uri.varNames : []
 
-        params = extractParams(params)
+        const serialize = createSerializer(this,options)
+
+        params = serialize(extractParams,params)
 
         options.url = options.uri ? options.uri.fill(pickParams(params,varNames)) : options.url
 
@@ -98,20 +112,20 @@ export const params = (params) => ({
             case 'head':
 
                 const url_params = Object.assign(
-                    extractUrl(options.url),
+                    serialize(extractUrl,options.url),
                     filterParams(params,varNames)
                 )
 
-                options.url = appendUrl(options.url, url_params)
+                options.url = serialize(appendUrl,options.url,url_params)
 
                 return options
 
 
             default:
 
-                options.body = transformParams(options,
+                options.body = serialize(transformParams,options,
                     Object.assign(
-                        extractParams(options.body),
+                        serialize(extractParams,options.body),
                         filterParams(params,varNames)
                     )
                 )
