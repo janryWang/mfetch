@@ -1,4 +1,4 @@
-import {fetch,interceptor,resource,extension} from 'serve-fetch'
+import {fetch,interceptor,resource,extension} from 'mfetch'
 
 
 

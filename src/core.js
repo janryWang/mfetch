@@ -16,7 +16,7 @@ export const core = {
                 return this.post('response',
                     new Promise((resolve, reject) => {
                         setTimeout(function () {
-                            reject(new Error(`[serve-fetch Error] request "${options.url}" is timeout!`))
+                            reject(new Error(`[mfetch Error] request "${options.url}" is timeout!`))
                         }, timeout)
                         this.post('fetch', options).then(resolve, reject)
                     })

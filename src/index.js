@@ -27,7 +27,7 @@ const createParams = (url, options) => {
         if (plugins[key]) {
             return buf.concat(plugins[key](options[key]))
         } else {
-            console.warn(`[serve-fetch] No ${key} plugins for serve-fetch!`)
+            console.warn(`[mfetch] No ${key} plugins for mfetch!`)
             return buf
         }
     }, [])
