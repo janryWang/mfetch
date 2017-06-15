@@ -1,6 +1,6 @@
 {
   "name": "mfetch",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "",
   "main": "./lib",
   "scripts": {
@@ -32,15 +32,16 @@
     "uri-templates": "^0.2.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.24.1",
     "babel-core": "^6.14.0",
     "babel-istanbul": "^0.11.0",
     "babel-loader": "^6.2.5",
     "babel-plugin-__coverage__": "^11.0.0",
+    "babel-plugin-transform-node-env-inline": "^6.8.0",
+    "babel-plugin-version-inline": "^1.0.0",
     "babel-preset-es2015": "^6.14.0",
     "babel-preset-stage-0": "^6.5.0",
     "colors": "^1.1.2",
-    "babel-plugin-version-inline": "^1.0.0",
-    "babel-plugin-transform-node-env-inline": "^6.8.0",
     "coveralls": "^2.11.4",
     "fs-extra": "^0.30.0",
     "isparta": "^4.0.0",

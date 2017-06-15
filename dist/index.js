@@ -30,9 +30,6 @@ var isArr = exports.isArr = Array.isArray || isType('Array');
 var isObj = exports.isObj = isType('Object');
 var isStr = exports.isStr = isType('String');
 var isNum = exports.isNum = isType('Number');
-var isIter = exports.isIter = function isIter(obj) {
-  return isArr(obj) || isObj(obj);
-};
 });
 
 unwrapExports(__moduleExports);
@@ -43,9 +40,7 @@ var __moduleExports$1 = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.lowerCase = exports.compose = exports.reduce = exports.each = exports.extend = exports.isValidThen = exports.isValid = exports.hasOwn = exports.hasOwnProperty = exports.obj = exports.getStr = exports.getFn = exports.noop = undefined;
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+exports.lowerCase = exports.each = exports.extend = exports.isValidThen = exports.isValid = exports.hasOwn = exports.hasOwnProperty = exports.obj = exports.getStr = exports.getFn = exports.noop = undefined;
 
 var _types = __moduleExports;
 
@@ -107,43 +102,6 @@ var each = exports.each = function each(target, fn) {
     }
 };
 
-var reduce = exports.reduce = function reduce(target, fn, init) {
-    if (!(0, _types.isFn)(fn)) return;
-    if ((0, _types.isArr)(target)) return target.reduce(fn, init);else {
-        var _ret = function () {
-            var result = init;
-            each(target, function (value, key) {
-                result = fn(result, value, key);
-            });
-            return {
-                v: result
-            };
-        }();
-
-        if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
-    }
-};
-
-var compose = exports.compose = function compose() {
-    var arguments$1 = arguments;
-
-    for (var _len = arguments.length, fns = Array(_len), _key = 0; _key < _len; _key++) {
-        fns[_key] = arguments$1[_key];
-    }
-
-    return function (payload) {
-        var arguments$1 = arguments;
-
-        for (var _len2 = arguments.length, args = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-            args[_key2 - 1] = arguments$1[_key2];
-        }
-
-        return reduce(fns, function (buf, fn) {
-            return getFn(fn).apply(undefined, [buf].concat(args));
-        }, payload);
-    };
-};
-
 var lowerCase = exports.lowerCase = function lowerCase(str) {
     return getStr(str).toLowerCase();
 };
@@ -151,31 +109,26 @@ var lowerCase = exports.lowerCase = function lowerCase(str) {
 
 unwrapExports(__moduleExports$1);
 
+var index = createCommonjsModule(function (module, exports) {
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.createPluginService = createPluginService;
+
 var _types = __moduleExports;
 
 var _utils = __moduleExports$1;
 
-var index = function createPluginService(Context) {
-    var selectors = (0, _utils.obj)();
+function createPluginService(Context) {
     var processors = (0, _utils.obj)();
-    var cached = (0, _utils.obj)();
-    var post_names = (0, _utils.obj)();
-    var indexes = [];
-
-    Context = (0, _utils.getFn)(Context);
+    Context = Context || (0, _utils.noop)();
 
     function inject(name, processor, fn) {
-        if (selectors[name]) {
-            return function (payload) {
-                var ctx = new Context(payload);
-                return selectors[name].call(ctx, payload, (0, _utils.getFn)(fn, payload));
-            };
-        } else {
-            return function (payload) {
-                var ctx = new Context(payload);
-                return processor.call(ctx, payload, (0, _utils.getFn)(fn, payload));
-            };
-        }
+        return function (payload) {
+            return processor.call(new Context(payload), payload, (0, _utils.getFn)(fn, payload));
+        };
     }
 
     function process(name, processor) {
@@ -185,63 +138,19 @@ var index = function createPluginService(Context) {
             });
         } else {
 
-            name = (0, _utils.lowerCase)(processors[name] ? name : processors['process' + name] ? 'process' + name : name);
+            name = (0, _utils.lowerCase)(name).replace(/process/i, '');
 
             if (!(0, _types.isFn)(processor)) return;
 
-            if (!processors[name]) {
-                indexes.push(name);
-            }
             processors[name] = inject(name, processor, processors[name]);
         }
     }
 
-    function remove(name) {
-        var processor = processors[name];
-        delete processor[name];
-        return processor;
-    }
-
-    function guard(name, selector) {
-        if ((0, _types.isStr)(name) && (0, _types.isFn)(selector)) {
-            if (!(0, _utils.hasOwn)(selectors, name)) {
-                selectors[name] = selector;
-            }
-        } else {
-            (0, _utils.each)(name, function (selector, name) {
-                guard(name, selector);
-            });
-        }
-    }
-
-    function getProcessor(name) {
-        name = (0, _utils.lowerCase)(name);
-        return processors[name] || processors['process' + name];
-    }
-
-    function parsePath(path) {
-        if (!post_names[path]) {
-            post_names[path] = {
-                name: ((0, _types.isArr)(path) ? path : path.split(',')).filter(function (name) {
-                    return getProcessor(name);
-                })
-            };
-            post_names[path].path = post_names[path].name.join(',');
-        }
-        return post_names[path];
-    }
-
-    function post(path, payload, defaults) {
-        if ((0, _types.isStr)(path)) {
-            var parsed = parsePath(path);
-            var name = parsed.name;
-            var new_path = parsed.path;
+    function post(name, payload, defaults) {
+        if ((0, _types.isStr)(name)) {
             if (name.length) {
-                processors[new_path] = processors[new_path] || _utils.compose.apply(null, name.map(function (name) {
-                    return getProcessor(name);
-                }));
-                if ((0, _types.isFn)(processors[new_path])) {
-                    return processors[new_path](payload);
+                if ((0, _types.isFn)(processors[name])) {
+                    return processors[name](payload);
                 }
             }
         }
@@ -254,12 +163,6 @@ var index = function createPluginService(Context) {
         } else {
             return cached[name];
         }
-    }
-
-    function all(payload) {
-        return (0, _utils.isValid)(payload) && (0, _utils.reduce)(indexes, function (payload, name) {
-            return post(name, payload);
-        }, payload);
     }
 
     function extension(exts) {
@@ -275,19 +178,19 @@ var index = function createPluginService(Context) {
     }
 
     var api = {
-        guard: guard,
         process: process,
-        remove: remove,
         post: post,
         extension: extension,
-        cache: cache,
-        all: all
+        cache: cache
     };
 
     Context.prototype = (0, _utils.extend)(Context.prototype, api);
 
     return api;
-};
+}
+});
+
+var createPluginService = unwrapExports(index);
 
 var recursiveIterator = createCommonjsModule(function (module, exports) {
 /*
@@ -920,8 +823,6 @@ var fetchJsonp = createCommonjsModule(function (module, exports) {
     return 'jsonp_' + Date.now() + '_' + Math.ceil(Math.random() * 100000);
   }
 
-  // Known issue: Will throw 'Uncaught ReferenceError: callback_*** is not defined'
-  // error if request timeout
   function clearFunction(functionName) {
     // IE8 throws an exception when you try to delete a property on window
     // http://stackoverflow.com/a/1824228/751089
@@ -934,7 +835,9 @@ var fetchJsonp = createCommonjsModule(function (module, exports) {
 
   function removeScript(scriptId) {
     var script = document.getElementById(scriptId);
-    document.getElementsByTagName('head')[0].removeChild(script);
+    if (script) {
+      document.getElementsByTagName('head')[0].removeChild(script);
+    }
   }
 
   function fetchJsonp(_url) {
@@ -972,6 +875,9 @@ var fetchJsonp = createCommonjsModule(function (module, exports) {
 
       var jsonpScript = document.createElement('script');
       jsonpScript.setAttribute('src', '' + url + jsonpCallback + '=' + callbackFunction);
+      if (options.charset) {
+        jsonpScript.setAttribute('charset', options.charset);
+      }
       jsonpScript.id = scriptId;
       document.getElementsByTagName('head')[0].appendChild(jsonpScript);
 
@@ -981,6 +887,15 @@ var fetchJsonp = createCommonjsModule(function (module, exports) {
         clearFunction(callbackFunction);
         removeScript(scriptId);
       }, timeout);
+
+      // Caught if got 404/500
+      jsonpScript.onerror = function () {
+        reject(new Error('JSONP request to ' + _url + ' failed'));
+
+        clearFunction(callbackFunction);
+        removeScript(scriptId);
+        if (timeoutId) clearTimeout(timeoutId);
+      };
     });
   }
 
@@ -1185,11 +1100,13 @@ function parserForArrayFormat(opts) {
 		case 'bracket':
 			return function (key, value, accumulator) {
 				result = /(\[\])$/.exec(key);
-
 				key = key.replace(/\[\]$/, '');
 
-				if (!result || accumulator[key] === undefined) {
+				if (!result) {
 					accumulator[key] = value;
+					return;
+				} else if (accumulator[key] === undefined) {
+					accumulator[key] = [value];
 					return;
 				}
 
@@ -2058,7 +1975,7 @@ var createParams = function (url, options) {
 }
 
 var http = function (args) {
-    var pluginService = index()
+    var pluginService = createPluginService()
     var options = {
         url: '/',
         method: 'get',
