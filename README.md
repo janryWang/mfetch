@@ -202,7 +202,7 @@ getCombineInfo({
 
 import {resource} from 'mfetch'
 
-const getSiteInfo = resource('/{id}?xxx')
+const getSiteInfo = resource('/{id}?xxx',{uriTemplate:true})
 
 getSiteInfo({
     id:12333
