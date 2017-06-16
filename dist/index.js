@@ -190,7 +190,8 @@ function createPluginService(Context) {
 }
 });
 
-var createPluginService = unwrapExports(index);
+unwrapExports(index);
+var createPluginService = index.createPluginService;
 
 var recursiveIterator = createCommonjsModule(function (module, exports) {
 /*
@@ -589,9 +590,9 @@ function json2formdata(object) {
 
     var form = new FormData();
     var iterator = new RecursiveIterator(object);
-    
 
-    var appendToForm = function(path, node, filename) {
+
+    var appendToForm = function (path, node, filename) {
         var name = toName(path);
         if (isUndefined(filename)) {
             form.append(name, node);
@@ -600,7 +601,7 @@ function json2formdata(object) {
         }
     };
 
-    iterator.onStepInto = function(ref) {
+    iterator.onStepInto = function (ref) {
         var parent = ref.parent;
         var node = ref.node;
 
@@ -618,7 +619,7 @@ function json2formdata(object) {
         }
     };
 
-    for(var i = 0, list = iterator; i < list.length; i += 1) {
+    for (var i = 0, list = iterator; i < list.length; i += 1) {
         var ref = list[i];
         var node = ref.node;
         var path = ref.path;
@@ -646,7 +647,7 @@ function json2formdata(object) {
     return form;
 }
 
-function formdata2json(form){
+function formdata2json(form) {
     var result = {}
     for (var i = 0, list = form.keys(); i < list.length; i += 1) {
         var key = list[i];
@@ -660,35 +661,79 @@ function formdata2json(form){
     return result
 }
 
-var cleanMs = function (str){
-    return lowerCase$1(String(str)).replace(/\s+/ig,'')
+var cleanMs = function (str) {
+    return lowerCase$1(String(str)).replace(/\s+/ig, '')
 }
 
-var contentTypeIs = function (options,target){
-    if(!options) return false
-    var headers = options.headers;
+var equalHeader = function (key1, key2) {
+    return cleanMs(key1) === cleanMs(key2)
+}
 
-    if(headers && headers['content-type']){
-        target = cleanMs(isArr$1(target) ? target.join('/') : isStr$1(target) ? target : '')
-        return headers['content-type'].indexOf(target) > -1
+var header = function (target){
+    return cleanMs(isArr$1(target) ? target.join('/') : isStr$1(target) ? target : '')
+}
+
+var getHeaderKeys = function (headers) {
+    return Object.keys(headers || {})
+}
+
+var hasHeader = function (headers, key) {
+    if(!headers) return headers
+    var keys = getHeaderKeys(headers)
+    return keys.some(function ($key) { return equalHeader($key, key); })
+}
+
+var findHeaderKey = function (headers,key){
+    if(!headers) return headers
+    var keys = getHeaderKeys(headers)
+    for (var i = 0; i < keys.length; i++) {
+        var value = headers[keys[i]]
+        if (equalHeader(key, keys[i])) {
+            return keys[i]
+        }
+    }
+    return ''
+}
+
+
+
+var getHeader = function (headers, key) {
+    if(!headers) return headers
+    return headers[findHeaderKey(headers,key)] || ''
+}
+
+var removeHeader = function (headers,key){
+    if(!headers) return headers
+    var $key = findHeaderKey(headers,key)
+    delete headers[$key]
+    return headers
+}
+
+var contentTypeIs = function (options, target) {
+    if (!options) return false
+    var headers = options.headers;
+    var keys = getHeaderKeys(headers)
+    if (hasHeader(headers, 'content-type')) {
+        return getHeader(headers, 'content-type').indexOf(header(target)) > -1
     }
 
     return false
 }
 
-var mergeHeaders = function (oldHeaders,newHeaders){
-    oldHeaders = Object.keys(oldHeaders || {}).reduce(function (buf,key){
-        buf[cleanMs(key)] = cleanMs(oldHeaders[key])
+var mergeHeaders = function (oldHeaders, newHeaders) {
+    var oldKeys = getHeaderKeys(oldHeaders)
+    var newKeys = getHeaderKeys(newHeaders)
+    return newKeys.reduce(function (buf, key) {
+        var oldKey = findHeaderKey(buf,key)
+        if (oldKey) {
+            buf[oldKey] = newHeaders[key]
+        }
         return buf
-    },{})
-    Object.keys(newHeaders || {}).forEach(function (key){
-        oldHeaders[cleanMs(key)] = cleanMs(newHeaders[key])
-    })
-    return oldHeaders
+    }, oldHeaders || {})
 }
 
-var process = function (payload,previous,response){
-    return Promise.resolve(previous(payload)).then(function (payload){
+var process = function (payload, previous, response) {
+    return Promise.resolve(previous(payload)).then(function (payload) {
         return response(payload)
     })
 }
@@ -697,7 +742,7 @@ var core = {
 
     processFetch: function processFetch(options, previous) {
         options = previous(options)
-        return fetch(options.url, options)
+        return window.fetch(options.url, options)
     },
 
     processRequest: function processRequest(options, previous) {
@@ -1239,7 +1284,7 @@ var stringify = function (obj, opts) {
 	}).join('&') : '';
 };
 
-var index$1 = {
+var index$2 = {
 	extract: extract,
 	parse: parse,
 	stringify: stringify
@@ -1257,38 +1302,39 @@ var parseUrl = function (url) {
     return ac
 }
 
-var appendUrl = function (ref){
+var appendUrl = function (ref) {
     var query_string = ref.query_string;
 
-    return function (url, params) {
+    return function (options, url, params) {
     var ac = parseUrl(url)
-    ac.search = query_string.stringify(params)
+    ac.search = query_string.stringify(params, options)
     return ac.href
 };
 }
 
-var extractUrl = function (ref){
+var extractUrl = function (ref) {
     var query_string = ref.query_string;
 
-    return function (url) {
+    return function (options, url) {
     return query_string.parse(
-        query_string.extract(String(url))
+        query_string.extract(parseUrl(url).search),
+        options
     )
 };
 }
 
 
-var extractParams = function (ref){
+var extractParams = function (ref) {
     var query_string = ref.query_string;
     var form_data = ref.form_data;
 
-    return function (params) {
+    return function (options, params) {
     var result = {}
-    if(isStr$1(params)){
-        return query_string.parse(params)
-    } else if(isForm(params)){
-        return form_data.parse(params)
-    } else if(isObj$1(params)){
+    if (isStr$1(params)) {
+        return query_string.parse(params, options)
+    } else if (isForm(params)) {
+        return form_data.parse(params, options)
+    } else if (isObj$1(params)) {
         return params
     } else {
         return result
@@ -1298,61 +1344,62 @@ var extractParams = function (ref){
 
 
 
-var transformParams = function (ref){
+var transformParams = function (ref) {
     var query_string = ref.query_string;
     var form_data = ref.form_data;
 
-    return function (options,params){
+    return function (options, params) {
 
-    var is = function (type){ return contentTypeIs(options,type); }
+    var is = function (type) { return contentTypeIs(options, type); }
 
-    if(is(['application','json'])){
+    if (is(['application', 'json'])) {
         return JSON.stringify(params)
-    } else if(is(['multipart','formdata'])){
-        return form_data.formify(params)
-    } else if(is(['application','x-www-form-urlencoded'])){
-        return query_string.stringify(params)
+    } else if (is(['multipart', 'formdata'])) {
+        removeHeader(options.headers, 'content-type')
+        return form_data.formify(params, options)
+    } else if (is(['application', 'x-www-form-urlencoded'])) {
+        return query_string.stringify(params, options)
     }
 };
 }
 
-var filterParams = function (params,names){
-    return Object.keys(params || {}).reduce(function (buf,key){
-        if(names.indexOf(key) == -1){
+var filterParams = function (params, names) {
+    return Object.keys(params || {}).reduce(function (buf, key) {
+        if (names.indexOf(key) == -1) {
             buf[key] = params[key]
         }
         return buf
-    },{})
+    }, {})
 }
 
-var pickParams = function (params,names){
-    return Object.keys(params || {}).reduce(function (buf,key){
-        if(names.indexOf(key) > -1){
+var pickParams = function (params, names) {
+    return Object.keys(params || {}).reduce(function (buf, key) {
+        if (names.indexOf(key) > -1) {
             buf[key] = params[key]
         }
         return buf
-    },{})
+    }, {})
 }
 
-var createSerializer = function (context,options){ return function (method){
+var createSerializer = function (context, options) { return function (method) {
     var args = [], len = arguments.length - 1;
     while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
 
-    return method(context.post('serializer',options)).apply(void 0, args)
+    return method(context.post('serializer', options)).apply(void 0, args)
 }; }
 
 var params = function (params) { return ({
 
-    processSerializer: function processSerializer(options){
+    processSerializer: function processSerializer(options) {
         return {
-            query_string:{
-                parse:index$1.parse,
-                stringify:index$1.stringify,
-                extract:index$1.extract
+            query_string: {
+                parse: index$2.parse,
+                stringify: index$2.stringify,
+                extract: index$2.extract
             },
-            form_data:{
-                parse:formdata2json,
-                formify:json2formdata
+            form_data: {
+                parse: formdata2json,
+                formify: json2formdata
             }
         }
     },
@@ -1362,11 +1409,13 @@ var params = function (params) { return ({
 
         var varNames = options.uri ? options.uri.varNames : []
 
-        var serialize = createSerializer(this,options)
+        var serialize = createSerializer(this, options)
 
-        params = serialize(extractParams,params)
+        params = serialize(extractParams, options, params)
 
-        options.url = options.uri ? options.uri.fill(pickParams(params,varNames)) : options.url
+        options.url = options.uri ? options.uri.fill(pickParams(params, varNames)) : options.url
+
+        delete options.uri
 
         switch (getMethod(options)) {
             case 'get':
@@ -1376,21 +1425,20 @@ var params = function (params) { return ({
             case 'head':
 
                 var url_params = Object.assign(
-                    serialize(extractUrl,options.url),
-                    filterParams(params,varNames)
+                    serialize(extractUrl, options, options.url),
+                    filterParams(params, varNames)
                 )
 
-                options.url = serialize(appendUrl,options.url,url_params)
-
+                options.url = serialize(appendUrl, options, options.url, url_params)
                 return options
 
 
             default:
 
-                options.body = serialize(transformParams,options,
+                options.body = serialize(transformParams, options,
                     Object.assign(
-                        serialize(extractParams,options.body),
-                        filterParams(params,varNames)
+                        serialize(extractParams, options, options.body),
+                        filterParams(params, varNames)
                     )
                 )
 
@@ -1911,11 +1959,14 @@ var uriTemplates = createCommonjsModule(function (module) {
  * 
  */
 
-var url = function (url){ return ({
-    processOption: function processOption(options,previous){
+var url = function (url) { return ({
+    processOption: function processOption(options, previous) {
         options = previous(options)
         options.url = url
-        options.uri = new uriTemplates(String(url))
+        if (options.uriTemplate) {
+            options.uri = new uriTemplates(String(url))
+            delete options.uriTemplate
+        }
         return options
     }
 }); }
@@ -1988,7 +2039,6 @@ var http = function (args) {
     pluginService.extension(core)
     pluginService.extension(args)
     pluginService.extension(EXTENSIONS)
-
     return pluginService.post('request',
         pluginService.post('afterOption',
             pluginService.post('option',
@@ -1999,7 +2049,7 @@ var http = function (args) {
 }
 
 
-var fetch$1 = function (url, options) {
+var fetch = function (url, options) {
     return http(createParams(url, options))
 }
 
@@ -2026,7 +2076,7 @@ var interceptor = function (specs) {
     EXTENSIONS = EXTENSIONS.concat(createInterceptor(specs))
 }
 
-exports.fetch = fetch$1;
+exports.fetch = fetch;
 exports.resource = resource;
 exports.extension = extension;
 exports.interceptor = interceptor;

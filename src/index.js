@@ -1,5 +1,5 @@
 'use strict'
-import createPluginService from 'super-plugin'
+import {createPluginService} from 'super-plugin'
 import { isFn, isObj, isStr } from './lang'
 import { core } from './core'
 import { createInterceptor } from './interceptor'
@@ -47,7 +47,6 @@ const http = (args) => {
     pluginService.extension(core)
     pluginService.extension(args)
     pluginService.extension(EXTENSIONS)
-
     return pluginService.post('request',
         pluginService.post('afterOption',
             pluginService.post('option',

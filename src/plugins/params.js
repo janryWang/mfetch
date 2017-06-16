@@ -4,7 +4,17 @@
  * 
  */
 
-import { isStr, isObj,isForm ,getMethod,lowerCase,json2formdata,contentTypeIs,formdata2json} from '../lang'
+import {
+    isStr,
+    isObj,
+    isForm,
+    getMethod,
+    lowerCase,
+    json2formdata,
+    contentTypeIs,
+    formdata2json,
+    removeHeader
+} from '../lang'
 import qs from 'query-string'
 
 
@@ -14,26 +24,27 @@ const parseUrl = (url) => {
     return ac
 }
 
-const appendUrl = ({query_string})=>(url, params) => {
+const appendUrl = ({ query_string }) => (options, url, params) => {
     const ac = parseUrl(url)
-    ac.search = query_string.stringify(params)
+    ac.search = query_string.stringify(params, options)
     return ac.href
 }
 
-const extractUrl = ({query_string})=>(url) => {
+const extractUrl = ({ query_string }) => (options, url) => {
     return query_string.parse(
-        query_string.extract(String(url))
+        query_string.extract(parseUrl(url).search),
+        options
     )
 }
 
 
-const extractParams = ({query_string,form_data})=>(params) => {
+const extractParams = ({ query_string, form_data }) => (options, params) => {
     const result = {}
-    if(isStr(params)){
-        return query_string.parse(params)
-    } else if(isForm(params)){
-        return form_data.parse(params)
-    } else if(isObj(params)){
+    if (isStr(params)) {
+        return query_string.parse(params, options)
+    } else if (isForm(params)) {
+        return form_data.parse(params, options)
+    } else if (isObj(params)) {
         return params
     } else {
         return result
@@ -42,53 +53,54 @@ const extractParams = ({query_string,form_data})=>(params) => {
 
 
 
-const transformParams = ({query_string,form_data})=>(options,params)=>{
+const transformParams = ({ query_string, form_data }) => (options, params) => {
 
-    const is = type=>contentTypeIs(options,type)
+    const is = type => contentTypeIs(options, type)
 
-    if(is(['application','json'])){
+    if (is(['application', 'json'])) {
         return JSON.stringify(params)
-    } else if(is(['multipart','formdata'])){
-        return form_data.formify(params)
-    } else if(is(['application','x-www-form-urlencoded'])){
-        return query_string.stringify(params)
+    } else if (is(['multipart', 'formdata'])) {
+        removeHeader(options.headers, 'content-type')
+        return form_data.formify(params, options)
+    } else if (is(['application', 'x-www-form-urlencoded'])) {
+        return query_string.stringify(params, options)
     }
 }
 
-const filterParams = (params,names)=>{
-    return Object.keys(params || {}).reduce((buf,key)=>{
-        if(names.indexOf(key) == -1){
+const filterParams = (params, names) => {
+    return Object.keys(params || {}).reduce((buf, key) => {
+        if (names.indexOf(key) == -1) {
             buf[key] = params[key]
         }
         return buf
-    },{})
+    }, {})
 }
 
-const pickParams = (params,names)=>{
-    return Object.keys(params || {}).reduce((buf,key)=>{
-        if(names.indexOf(key) > -1){
+const pickParams = (params, names) => {
+    return Object.keys(params || {}).reduce((buf, key) => {
+        if (names.indexOf(key) > -1) {
             buf[key] = params[key]
         }
         return buf
-    },{})
+    }, {})
 }
 
-const createSerializer = (context,options)=>(method,...args)=>{
-    return method(context.post('serializer',options))(...args)
+const createSerializer = (context, options) => (method, ...args) => {
+    return method(context.post('serializer', options))(...args)
 }
 
 export const params = (params) => ({
 
-    processSerializer(options){
+    processSerializer(options) {
         return {
-            query_string:{
-                parse:qs.parse,
-                stringify:qs.stringify,
-                extract:qs.extract
+            query_string: {
+                parse: qs.parse,
+                stringify: qs.stringify,
+                extract: qs.extract
             },
-            form_data:{
-                parse:formdata2json,
-                formify:json2formdata
+            form_data: {
+                parse: formdata2json,
+                formify: json2formdata
             }
         }
     },
@@ -98,11 +110,13 @@ export const params = (params) => ({
 
         const varNames = options.uri ? options.uri.varNames : []
 
-        const serialize = createSerializer(this,options)
+        const serialize = createSerializer(this, options)
 
-        params = serialize(extractParams,params)
+        params = serialize(extractParams, options, params)
 
-        options.url = options.uri ? options.uri.fill(pickParams(params,varNames)) : options.url
+        options.url = options.uri ? options.uri.fill(pickParams(params, varNames)) : options.url
+
+        delete options.uri
 
         switch (getMethod(options)) {
             case 'get':
@@ -112,21 +126,20 @@ export const params = (params) => ({
             case 'head':
 
                 const url_params = Object.assign(
-                    serialize(extractUrl,options.url),
-                    filterParams(params,varNames)
+                    serialize(extractUrl, options, options.url),
+                    filterParams(params, varNames)
                 )
 
-                options.url = serialize(appendUrl,options.url,url_params)
-
+                options.url = serialize(appendUrl, options, options.url, url_params)
                 return options
 
 
             default:
 
-                options.body = serialize(transformParams,options,
+                options.body = serialize(transformParams, options,
                     Object.assign(
-                        serialize(extractParams,options.body),
-                        filterParams(params,varNames)
+                        serialize(extractParams, options, options.body),
+                        filterParams(params, varNames)
                     )
                 )
 

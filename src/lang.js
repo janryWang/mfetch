@@ -1,6 +1,6 @@
 'use strict'
 import RecursiveIterator from 'recursive-iterator'
-export const isType = type => obj => Object.prototype.toString.call(obj) === `[object ${ type }]`
+export const isType = type => obj => Object.prototype.toString.call(obj) === `[object ${type}]`
 export const isFn = isType('Function')
 export const isArr = Array.isArray || isType('Array')
 export const isObj = isType('Object')
@@ -18,8 +18,8 @@ export const lowerCase = str => String(str).toLocaleLowerCase()
 
 export const getMethod = (options) => lowerCase(options.method)
 
-let {FormData} = window
-let {toString} = Object.prototype
+let { FormData } = window
+let { toString } = Object.prototype
 
 /**
  * Returns type of anything
@@ -52,9 +52,9 @@ export function json2formdata(object) {
 
     let form = new FormData();
     let iterator = new RecursiveIterator(object);
-    
 
-    let appendToForm = function(path, node, filename) {
+
+    let appendToForm = function (path, node, filename) {
         let name = toName(path);
         if (isUndefined(filename)) {
             form.append(name, node);
@@ -63,7 +63,7 @@ export function json2formdata(object) {
         }
     };
 
-    iterator.onStepInto = function({parent, node}) {
+    iterator.onStepInto = function ({ parent, node }) {
 
         let type = getType(node);
         switch (type) {
@@ -78,7 +78,7 @@ export function json2formdata(object) {
         }
     };
 
-    for(let {node, path} of iterator) {
+    for (let { node, path } of iterator) {
         var type = getType(node);
         switch (type) {
             case 'Array':
@@ -102,7 +102,7 @@ export function json2formdata(object) {
     return form;
 }
 
-export function formdata2json(form){
+export function formdata2json(form) {
     const result = {}
     for (let key of form.keys()) {
         if (!result.hasOwnProperty(key)) {
@@ -114,35 +114,79 @@ export function formdata2json(form){
     return result
 }
 
-export const cleanMs = (str)=>{
-    return lowerCase(String(str)).replace(/\s+/ig,'')
+export const cleanMs = (str) => {
+    return lowerCase(String(str)).replace(/\s+/ig, '')
 }
 
-export const contentTypeIs = (options,target)=>{
-    if(!options) return false
-    const {headers} = options
+const equalHeader = (key1, key2) => {
+    return cleanMs(key1) === cleanMs(key2)
+}
 
-    if(headers && headers['content-type']){
-        target = cleanMs(isArr(target) ? target.join('/') : isStr(target) ? target : '')
-        return headers['content-type'].indexOf(target) > -1
+export const header = (target)=>{
+    return cleanMs(isArr(target) ? target.join('/') : isStr(target) ? target : '')
+}
+
+export const getHeaderKeys = (headers) => {
+    return Object.keys(headers || {})
+}
+
+export const hasHeader = (headers, key) => {
+    if(!headers) return headers
+    const keys = getHeaderKeys(headers)
+    return keys.some($key => equalHeader($key, key))
+}
+
+export const findHeaderKey = (headers,key)=>{
+    if(!headers) return headers
+    const keys = getHeaderKeys(headers)
+    for (let i = 0; i < keys.length; i++) {
+        let value = headers[keys[i]]
+        if (equalHeader(key, keys[i])) {
+            return keys[i]
+        }
+    }
+    return ''
+}
+
+
+
+export const getHeader = (headers, key) => {
+    if(!headers) return headers
+    return headers[findHeaderKey(headers,key)] || ''
+}
+
+export const removeHeader = (headers,key)=>{
+    if(!headers) return headers
+    const $key = findHeaderKey(headers,key)
+    delete headers[$key]
+    return headers
+}
+
+export const contentTypeIs = (options, target) => {
+    if (!options) return false
+    const { headers } = options
+    const keys = getHeaderKeys(headers)
+    if (hasHeader(headers, 'content-type')) {
+        return getHeader(headers, 'content-type').indexOf(header(target)) > -1
     }
 
     return false
 }
 
-export const mergeHeaders = (oldHeaders,newHeaders)=>{
-    oldHeaders = Object.keys(oldHeaders || {}).reduce((buf,key)=>{
-        buf[cleanMs(key)] = cleanMs(oldHeaders[key])
+export const mergeHeaders = (oldHeaders, newHeaders) => {
+    const oldKeys = getHeaderKeys(oldHeaders)
+    const newKeys = getHeaderKeys(newHeaders)
+    return newKeys.reduce((buf, key) => {
+        const oldKey = findHeaderKey(buf,key)
+        if (oldKey) {
+            buf[oldKey] = newHeaders[key]
+        }
         return buf
-    },{})
-    Object.keys(newHeaders || {}).forEach((key)=>{
-        oldHeaders[cleanMs(key)] = cleanMs(newHeaders[key])
-    })
-    return oldHeaders
+    }, oldHeaders || {})
 }
 
-export const process = (payload,previous,response)=>{
-    return Promise.resolve(previous(payload)).then((payload)=>{
+export const process = (payload, previous, response) => {
+    return Promise.resolve(previous(payload)).then((payload) => {
         return response(payload)
     })
 }

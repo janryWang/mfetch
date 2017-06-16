@@ -5,7 +5,7 @@ export const core = {
 
     processFetch(options, previous) {
         options = previous(options)
-        return fetch(options.url, options)
+        return window.fetch(options.url, options)
     },
 
     processRequest(options, previous) {

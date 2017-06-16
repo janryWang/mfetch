@@ -5,11 +5,14 @@ import ut from 'uri-templates'
  * 
  */
 
-export const url = (url)=>({
-    processOption(options,previous){
+export const url = (url) => ({
+    processOption(options, previous) {
         options = previous(options)
         options.url = url
-        options.uri = new ut(String(url))
+        if (options.uriTemplate) {
+            options.uri = new ut(String(url))
+            delete options.uriTemplate
+        }
         return options
     }
 })
