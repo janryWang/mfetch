@@ -131,6 +131,10 @@ function createPluginService(Context) {
         };
     }
 
+    function getProcessName(name) {
+        return (0, _utils.lowerCase)(name).replace(/process/i, '');
+    }
+
     function process(name, processor) {
         if ((0, _types.isObj)(name)) {
             (0, _utils.each)(name, function (processor, key) {
@@ -138,7 +142,7 @@ function createPluginService(Context) {
             });
         } else {
 
-            name = (0, _utils.lowerCase)(name).replace(/process/i, '');
+            name = getProcessName(name);
 
             if (!(0, _types.isFn)(processor)) return;
 
@@ -149,6 +153,7 @@ function createPluginService(Context) {
     function post(name, payload, defaults) {
         if ((0, _types.isStr)(name)) {
             if (name.length) {
+                name = getProcessName(name);
                 if ((0, _types.isFn)(processors[name])) {
                     return processors[name](payload);
                 }
@@ -1449,34 +1454,6 @@ var params = function (params) { return ({
     }
 }); }
 
-/**
- * 
- * timeout插件，用于设置timeout
- * 
- */
-
-var timeout = function (timeout){ return ({
-    processOption: function processOption(options,previous){
-        options = previous(options)
-        options.timeout = timeout
-        return options
-    }
-}); }
-
-/**
- * 
- * timeout插件，用于设置mode
- * 
- */
-
-var mode = function (mode){ return ({
-    processOption: function processOption(options,previous){
-        options = previous(options)
-        options.mode = mode
-        return options
-    }
-}); }
-
 var uriTemplates = createCommonjsModule(function (module) {
 (function (global, factory) {
 	if (typeof define === 'function' && define.amd) {
@@ -1992,35 +1969,41 @@ var plugins = Object.freeze({
 	headers: headers,
 	method: method,
 	params: params,
-	timeout: timeout,
-	mode: mode,
 	url: url,
 	credentials: credentials
 });
 
 var EXTENSIONS = []
 
+var defaultPlugin = function (key, value) {
+    return {
+        beforeOption: function beforeOption(options, previous) {
+            options = previous(options)
+            options[key] = value
+            return options
+        }
+    }
+}
 
 var createParams = function (url, options) {
 
-    if(isStr$1(url)){
+    if (isStr$1(url)) {
         options = Object.assign(
             { url: url },
             options
-        ) 
-    } else if(isObj$1(url)){
+        )
+    } else if (isObj$1(url)) {
         options = Object.assign(
             url,
             options
-        ) 
+        )
     }
 
     return Object.keys(options).reduce(function (buf, key) {
         if (plugins[key]) {
             return buf.concat(plugins[key](options[key]))
         } else {
-            console.warn(("[mfetch] No " + key + " plugins for mfetch!"))
-            return buf
+            return buf.concat(defaultPlugin(key, options[key]))
         }
     }, [])
 }

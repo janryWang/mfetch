@@ -117,19 +117,21 @@ describe('sample url with hash', () => {
 })
 
 describe('template url', () => {
-    fancy('//xxx', () => {
-
-    })
-})
-
-describe('template url with params', () => {
-    fancy('//xxx', () => {
-
-    })
-})
-
-describe('template url with hash', () => {
-    fancy('//xxx', () => {
-
+    fancy('/{aa}/bb/cc?dd={mm}', (fetch) => {
+        fetch({
+            url:'/{aa}/bb/cc?dd={mm}',
+            params:{
+                aa:'123',
+                mm:321
+            },
+            uriTemplate:true
+        }, {
+            'should be exist': (options) => {
+                should.exist(options.url)
+            },
+            'should be equal /123/bb/cc?dd=321': (options) => {
+                options.url.should.be.containEql('/123/bb/cc?dd=321')
+            }
+        })
     })
 })

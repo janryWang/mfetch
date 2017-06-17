@@ -1,5 +1,5 @@
 'use strict'
-import {createPluginService} from 'super-plugin'
+import { createPluginService } from 'super-plugin'
 import { isFn, isObj, isStr } from './lang'
 import { core } from './core'
 import { createInterceptor } from './interceptor'
@@ -8,27 +8,35 @@ import * as plugins from './plugins'
 
 let EXTENSIONS = []
 
+const defaultPlugin = (key, value) => {
+    return {
+        beforeOption(options, previous) {
+            options = previous(options)
+            options[key] = value
+            return options
+        }
+    }
+}
 
 const createParams = (url, options) => {
 
-    if(isStr(url)){
+    if (isStr(url)) {
         options = Object.assign(
             { url },
             options
-        ) 
-    } else if(isObj(url)){
+        )
+    } else if (isObj(url)) {
         options = Object.assign(
             url,
             options
-        ) 
+        )
     }
 
     return Object.keys(options).reduce((buf, key) => {
         if (plugins[key]) {
             return buf.concat(plugins[key](options[key]))
         } else {
-            console.warn(`[mfetch] No ${key} plugins for mfetch!`)
-            return buf
+            return buf.concat(defaultPlugin(key, options[key]))
         }
     }, [])
 }
