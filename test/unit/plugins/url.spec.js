@@ -1,5 +1,6 @@
 import { fetch, interceptor, resource, extension } from 'mfetch'
 
+
 const fancy = (message, callback) => {
     describe(message, () => {
         callback((url, cases) => {

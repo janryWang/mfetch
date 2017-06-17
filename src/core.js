@@ -1,6 +1,7 @@
 import { isNumber,process } from './lang'
 
 
+
 export const core = {
 
     processFetch(options, previous) {
