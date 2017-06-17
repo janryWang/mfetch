@@ -122,7 +122,7 @@ const equalHeader = (key1, key2) => {
     return cleanMs(key1) === cleanMs(key2)
 }
 
-export const header = (target)=>{
+export const header = (target) => {
     return cleanMs(isArr(target) ? target.join('/') : isStr(target) ? target : '')
 }
 
@@ -131,13 +131,13 @@ export const getHeaderKeys = (headers) => {
 }
 
 export const hasHeader = (headers, key) => {
-    if(!headers) return headers
+    if (!headers) return headers
     const keys = getHeaderKeys(headers)
     return keys.some($key => equalHeader($key, key))
 }
 
-export const findHeaderKey = (headers,key)=>{
-    if(!headers) return headers
+export const findHeaderKey = (headers, key) => {
+    if (!headers) return headers
     const keys = getHeaderKeys(headers)
     for (let i = 0; i < keys.length; i++) {
         let value = headers[keys[i]]
@@ -151,13 +151,13 @@ export const findHeaderKey = (headers,key)=>{
 
 
 export const getHeader = (headers, key) => {
-    if(!headers) return headers
-    return headers[findHeaderKey(headers,key)] || ''
+    if (!headers) return headers
+    return headers[findHeaderKey(headers, key)] || ''
 }
 
-export const removeHeader = (headers,key)=>{
-    if(!headers) return headers
-    const $key = findHeaderKey(headers,key)
+export const removeHeader = (headers, key) => {
+    if (!headers) return headers
+    const $key = findHeaderKey(headers, key)
     delete headers[$key]
     return headers
 }
@@ -177,7 +177,7 @@ export const mergeHeaders = (oldHeaders, newHeaders) => {
     const oldKeys = getHeaderKeys(oldHeaders)
     const newKeys = getHeaderKeys(newHeaders)
     return newKeys.reduce((buf, key) => {
-        const oldKey = findHeaderKey(buf,key)
+        const oldKey = findHeaderKey(buf, key)
         if (oldKey) {
             buf[oldKey] = newHeaders[key]
         }
@@ -185,8 +185,10 @@ export const mergeHeaders = (oldHeaders, newHeaders) => {
     }, oldHeaders || {})
 }
 
-export const process = (payload, previous, response) => {
+export const process = (payload, previous, resolve, reject) => {
     return Promise.resolve(previous(payload)).then((payload) => {
-        return response(payload)
+        return Promise.resolve(resolve ? resolve(payload) : payload)
+    }, (payload) => {
+        return Promise.reject(reject ? reject(payload) : payload)
     })
 }

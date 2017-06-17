@@ -21,6 +21,26 @@ export default {
                 })
             }
         }
+    },
+
+    resolve(fn) {
+        return {
+            processResponse(promise, previous) {
+                return process(promise, previous, (payload) => {
+                    return isFn(fn) ? fn(payload) : payload
+                })
+            }
+        }
+    },
+
+    reject(fn) {
+        return {
+            processResponse(promise, previous) {
+                return process(promise, previous, (payload) => payload, (payload) => {
+                    return isFn(fn) ? fn(payload) : payload
+                })
+            }
+        }
     }
 
 }

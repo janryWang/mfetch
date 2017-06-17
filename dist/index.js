@@ -674,7 +674,7 @@ var equalHeader = function (key1, key2) {
     return cleanMs(key1) === cleanMs(key2)
 }
 
-var header = function (target){
+var header = function (target) {
     return cleanMs(isArr$1(target) ? target.join('/') : isStr$1(target) ? target : '')
 }
 
@@ -683,13 +683,13 @@ var getHeaderKeys = function (headers) {
 }
 
 var hasHeader = function (headers, key) {
-    if(!headers) return headers
+    if (!headers) return headers
     var keys = getHeaderKeys(headers)
     return keys.some(function ($key) { return equalHeader($key, key); })
 }
 
-var findHeaderKey = function (headers,key){
-    if(!headers) return headers
+var findHeaderKey = function (headers, key) {
+    if (!headers) return headers
     var keys = getHeaderKeys(headers)
     for (var i = 0; i < keys.length; i++) {
         var value = headers[keys[i]]
@@ -703,13 +703,13 @@ var findHeaderKey = function (headers,key){
 
 
 var getHeader = function (headers, key) {
-    if(!headers) return headers
-    return headers[findHeaderKey(headers,key)] || ''
+    if (!headers) return headers
+    return headers[findHeaderKey(headers, key)] || ''
 }
 
-var removeHeader = function (headers,key){
-    if(!headers) return headers
-    var $key = findHeaderKey(headers,key)
+var removeHeader = function (headers, key) {
+    if (!headers) return headers
+    var $key = findHeaderKey(headers, key)
     delete headers[$key]
     return headers
 }
@@ -729,7 +729,7 @@ var mergeHeaders = function (oldHeaders, newHeaders) {
     var oldKeys = getHeaderKeys(oldHeaders)
     var newKeys = getHeaderKeys(newHeaders)
     return newKeys.reduce(function (buf, key) {
-        var oldKey = findHeaderKey(buf,key)
+        var oldKey = findHeaderKey(buf, key)
         if (oldKey) {
             buf[oldKey] = newHeaders[key]
         }
@@ -737,9 +737,11 @@ var mergeHeaders = function (oldHeaders, newHeaders) {
     }, oldHeaders || {})
 }
 
-var process = function (payload, previous, response) {
+var process = function (payload, previous, resolve, reject) {
     return Promise.resolve(previous(payload)).then(function (payload) {
-        return response(payload)
+        return Promise.resolve(resolve ? resolve(payload) : payload)
+    }, function (payload) {
+        return Promise.reject(reject ? reject(payload) : payload)
     })
 }
 
@@ -789,6 +791,26 @@ var interceptors = {
         return {
             processResponse: function processResponse(promise, previous) {
                 return process(promise, previous, function (payload) {
+                    return isFn$1(fn) ? fn(payload) : payload
+                })
+            }
+        }
+    },
+
+    resolve: function resolve(fn) {
+        return {
+            processResponse: function processResponse(promise, previous) {
+                return process(promise, previous, function (payload) {
+                    return isFn$1(fn) ? fn(payload) : payload
+                })
+            }
+        }
+    },
+
+    reject: function reject(fn) {
+        return {
+            processResponse: function processResponse(promise, previous) {
+                return process(promise, previous, function (payload) { return payload; }, function (payload) {
                     return isFn$1(fn) ? fn(payload) : payload
                 })
             }
