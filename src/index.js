@@ -1,6 +1,6 @@
 'use strict'
 import { createPluginService } from 'super-plugin'
-import { isFn, isObj, isStr,createSerializer,extractParams } from './lang'
+import { isFn, isObj, isStr, createSerializer, extractParams } from './lang'
 import { core } from './core'
 import { createInterceptor } from './interceptor'
 import * as plugins from './plugins'
@@ -8,7 +8,7 @@ import * as plugins from './plugins'
 let EXTENSIONS = []
 
 
-const getOptions = (url,options)=>{
+const getOptions = (url, options) => {
     if (isStr(url)) {
         return Object.assign(
             { url },
@@ -34,11 +34,11 @@ const createParams = (options) => {
     }, [])
 }
 
-const mergeParams = (data)=>{
+const mergeParams = (data) => {
     return {
-        processOption(options){
+        processBeforeOption(options) {
             const serialize = createSerializer(this, options)
-            options.params =  Object.assign(
+            options.params = Object.assign(
                 serialize(extractParams, options, options.params),
                 serialize(extractParams, options, data)
             )
@@ -47,7 +47,7 @@ const mergeParams = (data)=>{
     }
 }
 
-const http = (args,_options) => {
+const http = (args, _options) => {
     const pluginService = createPluginService()
     const options = Object.assign({
         url: '/',
@@ -56,7 +56,7 @@ const http = (args,_options) => {
             'Accept': 'application/json',
             'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
         }
-    },_options)
+    }, _options)
 
     pluginService.extension(core)
     pluginService.extension(args)
@@ -72,8 +72,8 @@ const http = (args,_options) => {
 
 
 export const fetch = (url, _options) => {
-    const options = getOptions(url,_options)
-    return http(createParams(options),options)
+    const options = getOptions(url, _options)
+    return http(createParams(options), options)
 }
 
 export const resource = (url, _options) => {
@@ -81,13 +81,17 @@ export const resource = (url, _options) => {
         return data => Promise.resolve(url(data))
     }
 
-    const options = getOptions(url,_options)
+    const options = getOptions(url, _options)
+
+    if (!('params' in options)) {
+        options.params = {}
+    }
 
     const params = createParams(options)
 
     return (data) => {
         params.unshift(mergeParams(data))
-        return http(params,options)
+        return http(params, options)
     }
 }
 
