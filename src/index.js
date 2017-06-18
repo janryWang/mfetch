@@ -8,49 +8,43 @@ import * as plugins from './plugins'
 
 let EXTENSIONS = []
 
-const defaultPlugin = (key, value) => {
-    return {
-        beforeOption(options, previous) {
-            options = previous(options)
-            options[key] = value
-            return options
-        }
-    }
-}
 
-const createParams = (url, options) => {
-
+const getOptions = (url,options)=>{
     if (isStr(url)) {
-        options = Object.assign(
+        return Object.assign(
             { url },
             options
         )
     } else if (isObj(url)) {
-        options = Object.assign(
+        return Object.assign(
             url,
             options
         )
     }
 
+    return {}
+}
+
+const createParams = (options) => {
     return Object.keys(options).reduce((buf, key) => {
         if (plugins[key]) {
             return buf.concat(plugins[key](options[key]))
         } else {
-            return buf.concat(defaultPlugin(key, options[key]))
+            return buf
         }
     }, [])
 }
 
-const http = (args) => {
+const http = (args,_options) => {
     const pluginService = createPluginService()
-    const options = {
+    const options = Object.assign({
         url: '/',
         method: 'get',
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
         }
-    }
+    },_options)
 
     pluginService.extension(core)
     pluginService.extension(args)
@@ -65,18 +59,22 @@ const http = (args) => {
 }
 
 
-export const fetch = (url, options) => {
-    return http(createParams(url, options))
+export const fetch = (url, _options) => {
+    const options = getOptions(url,_options)
+    return http(createParams(options),options)
 }
 
-export const resource = (url, options) => {
+export const resource = (url, _options) => {
     if (isFn(url)) {
         return data => Promise.resolve(url(data))
     }
-    const params = createParams(url, options)
+
+    const options = getOptions(url,_options)
+
+    const params = createParams(options)
 
     return (data) => {
-        return http(params.concat(plugins.params(data)))
+        return http(params.concat(plugins.params(data)),options)
     }
 }
 

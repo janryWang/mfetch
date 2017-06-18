@@ -1997,49 +1997,43 @@ var plugins = Object.freeze({
 
 var EXTENSIONS = []
 
-var defaultPlugin = function (key, value) {
-    return {
-        beforeOption: function beforeOption(options, previous) {
-            options = previous(options)
-            options[key] = value
-            return options
-        }
-    }
-}
 
-var createParams = function (url, options) {
-
+var getOptions = function (url,options){
     if (isStr$1(url)) {
-        options = Object.assign(
+        return Object.assign(
             { url: url },
             options
         )
     } else if (isObj$1(url)) {
-        options = Object.assign(
+        return Object.assign(
             url,
             options
         )
     }
 
+    return {}
+}
+
+var createParams = function (options) {
     return Object.keys(options).reduce(function (buf, key) {
         if (plugins[key]) {
             return buf.concat(plugins[key](options[key]))
         } else {
-            return buf.concat(defaultPlugin(key, options[key]))
+            return buf
         }
     }, [])
 }
 
-var http = function (args) {
+var http = function (args,_options) {
     var pluginService = createPluginService()
-    var options = {
+    var options = Object.assign({
         url: '/',
         method: 'get',
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
         }
-    }
+    },_options)
 
     pluginService.extension(core)
     pluginService.extension(args)
@@ -2054,18 +2048,22 @@ var http = function (args) {
 }
 
 
-var fetch = function (url, options) {
-    return http(createParams(url, options))
+var fetch = function (url, _options) {
+    var options = getOptions(url,_options)
+    return http(createParams(options),options)
 }
 
-var resource = function (url, options) {
+var resource = function (url, _options) {
     if (isFn$1(url)) {
         return function (data) { return Promise.resolve(url(data)); }
     }
-    var params$$ = createParams(url, options)
+
+    var options = getOptions(url,_options)
+
+    var params$$ = createParams(options)
 
     return function (data) {
-        return http(params$$.concat(params(data)))
+        return http(params$$.concat(params(data)),options)
     }
 }
 
