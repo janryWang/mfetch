@@ -198,6 +198,309 @@ function createPluginService(Context) {
 unwrapExports(index);
 var createPluginService = index.createPluginService;
 
+var __moduleExports$2 = function (str) {
+	return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
+		return '%' + c.charCodeAt(0).toString(16).toUpperCase();
+	});
+};
+
+/* eslint-disable no-unused-vars */
+var getOwnPropertySymbols = Object.getOwnPropertySymbols;
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+var propIsEnumerable = Object.prototype.propertyIsEnumerable;
+
+function toObject(val) {
+	if (val === null || val === undefined) {
+		throw new TypeError('Object.assign cannot be called with null or undefined');
+	}
+
+	return Object(val);
+}
+
+function shouldUseNative() {
+	try {
+		if (!Object.assign) {
+			return false;
+		}
+
+		// Detect buggy property enumeration order in older V8 versions.
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=4118
+		var test1 = new String('abc');  // eslint-disable-line no-new-wrappers
+		test1[5] = 'de';
+		if (Object.getOwnPropertyNames(test1)[0] === '5') {
+			return false;
+		}
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test2 = {};
+		for (var i = 0; i < 10; i++) {
+			test2['_' + String.fromCharCode(i)] = i;
+		}
+		var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
+			return test2[n];
+		});
+		if (order2.join('') !== '0123456789') {
+			return false;
+		}
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test3 = {};
+		'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
+			test3[letter] = letter;
+		});
+		if (Object.keys(Object.assign({}, test3)).join('') !==
+				'abcdefghijklmnopqrst') {
+			return false;
+		}
+
+		return true;
+	} catch (err) {
+		// We don't expect any of the above to throw, but better to be safe.
+		return false;
+	}
+}
+
+var __moduleExports$3 = shouldUseNative() ? Object.assign : function (target, source) {
+	var arguments$1 = arguments;
+
+	var from;
+	var to = toObject(target);
+	var symbols;
+
+	for (var s = 1; s < arguments.length; s++) {
+		from = Object(arguments$1[s]);
+
+		for (var key in from) {
+			if (hasOwnProperty.call(from, key)) {
+				to[key] = from[key];
+			}
+		}
+
+		if (getOwnPropertySymbols) {
+			symbols = getOwnPropertySymbols(from);
+			for (var i = 0; i < symbols.length; i++) {
+				if (propIsEnumerable.call(from, symbols[i])) {
+					to[symbols[i]] = from[symbols[i]];
+				}
+			}
+		}
+	}
+
+	return to;
+};
+
+var strictUriEncode = __moduleExports$2;
+var objectAssign = __moduleExports$3;
+
+function encoderForArrayFormat(opts) {
+	switch (opts.arrayFormat) {
+		case 'index':
+			return function (key, value, index) {
+				return value === null ? [
+					encode(key, opts),
+					'[',
+					index,
+					']'
+				].join('') : [
+					encode(key, opts),
+					'[',
+					encode(index, opts),
+					']=',
+					encode(value, opts)
+				].join('');
+			};
+
+		case 'bracket':
+			return function (key, value) {
+				return value === null ? encode(key, opts) : [
+					encode(key, opts),
+					'[]=',
+					encode(value, opts)
+				].join('');
+			};
+
+		default:
+			return function (key, value) {
+				return value === null ? encode(key, opts) : [
+					encode(key, opts),
+					'=',
+					encode(value, opts)
+				].join('');
+			};
+	}
+}
+
+function parserForArrayFormat(opts) {
+	var result;
+
+	switch (opts.arrayFormat) {
+		case 'index':
+			return function (key, value, accumulator) {
+				result = /\[(\d*)\]$/.exec(key);
+
+				key = key.replace(/\[\d*\]$/, '');
+
+				if (!result) {
+					accumulator[key] = value;
+					return;
+				}
+
+				if (accumulator[key] === undefined) {
+					accumulator[key] = {};
+				}
+
+				accumulator[key][result[1]] = value;
+			};
+
+		case 'bracket':
+			return function (key, value, accumulator) {
+				result = /(\[\])$/.exec(key);
+				key = key.replace(/\[\]$/, '');
+
+				if (!result) {
+					accumulator[key] = value;
+					return;
+				} else if (accumulator[key] === undefined) {
+					accumulator[key] = [value];
+					return;
+				}
+
+				accumulator[key] = [].concat(accumulator[key], value);
+			};
+
+		default:
+			return function (key, value, accumulator) {
+				if (accumulator[key] === undefined) {
+					accumulator[key] = value;
+					return;
+				}
+
+				accumulator[key] = [].concat(accumulator[key], value);
+			};
+	}
+}
+
+function encode(value, opts) {
+	if (opts.encode) {
+		return opts.strict ? strictUriEncode(value) : encodeURIComponent(value);
+	}
+
+	return value;
+}
+
+function keysSorter(input) {
+	if (Array.isArray(input)) {
+		return input.sort();
+	} else if (typeof input === 'object') {
+		return keysSorter(Object.keys(input)).sort(function (a, b) {
+			return Number(a) - Number(b);
+		}).map(function (key) {
+			return input[key];
+		});
+	}
+
+	return input;
+}
+
+var extract = function (str) {
+	return str.split('?')[1] || '';
+};
+
+var parse = function (str, opts) {
+	opts = objectAssign({arrayFormat: 'none'}, opts);
+
+	var formatter = parserForArrayFormat(opts);
+
+	// Create an object with no prototype
+	// https://github.com/sindresorhus/query-string/issues/47
+	var ret = Object.create(null);
+
+	if (typeof str !== 'string') {
+		return ret;
+	}
+
+	str = str.trim().replace(/^(\?|#|&)/, '');
+
+	if (!str) {
+		return ret;
+	}
+
+	str.split('&').forEach(function (param) {
+		var parts = param.replace(/\+/g, ' ').split('=');
+		// Firefox (pre 40) decodes `%3D` to `=`
+		// https://github.com/sindresorhus/query-string/pull/37
+		var key = parts.shift();
+		var val = parts.length > 0 ? parts.join('=') : undefined;
+
+		// missing `=` should be `null`:
+		// http://w3.org/TR/2012/WD-url-20120524/#collect-url-parameters
+		val = val === undefined ? null : decodeURIComponent(val);
+
+		formatter(decodeURIComponent(key), val, ret);
+	});
+
+	return Object.keys(ret).sort().reduce(function (result, key) {
+		var val = ret[key];
+		if (Boolean(val) && typeof val === 'object' && !Array.isArray(val)) {
+			// Sort object keys, not values
+			result[key] = keysSorter(val);
+		} else {
+			result[key] = val;
+		}
+
+		return result;
+	}, Object.create(null));
+};
+
+var stringify = function (obj, opts) {
+	var defaults = {
+		encode: true,
+		strict: true,
+		arrayFormat: 'none'
+	};
+
+	opts = objectAssign(defaults, opts);
+
+	var formatter = encoderForArrayFormat(opts);
+
+	return obj ? Object.keys(obj).sort().map(function (key) {
+		var val = obj[key];
+
+		if (val === undefined) {
+			return '';
+		}
+
+		if (val === null) {
+			return encode(key, opts);
+		}
+
+		if (Array.isArray(val)) {
+			var result = [];
+
+			val.slice().forEach(function (val2) {
+				if (val2 === undefined) {
+					return;
+				}
+
+				result.push(formatter(key, val2, result.length));
+			});
+
+			return result.join('&');
+		}
+
+		return encode(key, opts) + '=' + encode(val, opts);
+	}).filter(function (x) {
+		return x.length > 0;
+	}).join('&') : '';
+};
+
+var index$2 = {
+	extract: extract,
+	parse: parse,
+	stringify: stringify
+};
+
 var recursiveIterator = createCommonjsModule(function (module, exports) {
 /*
  recursive-iterator v2.0.1
@@ -745,6 +1048,98 @@ var process = function (payload, previous, resolve, reject) {
     })
 }
 
+var parseUrl = function (url) {
+    var ac = document.createElement('a')
+    ac.href = url
+    return ac
+}
+
+var appendUrl = function (ref) {
+    var query_string = ref.query_string;
+
+    return function (options, url, params) {
+    var ac = parseUrl(url)
+    ac.search = query_string.stringify(params, options)
+    return ac.href
+};
+}
+
+var extractUrl = function (ref) {
+    var query_string = ref.query_string;
+
+    return function (options, url) {
+    return query_string.parse(
+        query_string.extract(parseUrl(url).search),
+        options
+    )
+};
+}
+
+
+var extractParams = function (ref) {
+    var query_string = ref.query_string;
+    var form_data = ref.form_data;
+
+    return function (options, params) {
+    var result = {}
+    if (isStr$1(params)) {
+        return query_string.parse(params, options)
+    } else if (isForm(params)) {
+        return form_data.parse(params, options)
+    } else if (isObj$1(params)) {
+        return params
+    } else {
+        return result
+    }
+};
+}
+
+
+
+var transformParams = function (ref) {
+    var query_string = ref.query_string;
+    var form_data = ref.form_data;
+
+    return function (options, params) {
+
+    var is = function (type) { return contentTypeIs(options, type); }
+
+    if (is(['application', 'json'])) {
+        return JSON.stringify(params)
+    } else if (is(['multipart', 'formdata'])) {
+        removeHeader(options.headers, 'content-type')
+        return form_data.formify(params, options)
+    } else if (is(['application', 'x-www-form-urlencoded'])) {
+        return query_string.stringify(params, options)
+    }
+};
+}
+
+var filterParams = function (params, names) {
+    return Object.keys(params || {}).reduce(function (buf, key) {
+        if (names.indexOf(key) == -1) {
+            buf[key] = params[key]
+        }
+        return buf
+    }, {})
+}
+
+var pickParams = function (params, names) {
+    return Object.keys(params || {}).reduce(function (buf, key) {
+        if (names.indexOf(key) > -1) {
+            buf[key] = params[key]
+        }
+        return buf
+    }, {})
+}
+
+var createSerializer = function (context, options) { return function (method) {
+    var args = [], len = arguments.length - 1;
+    while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
+
+    return method(context.post('serializer', options)).apply(void 0, args)
+}; }
+
 var core = {
 
     processFetch: function processFetch(options, previous) {
@@ -1014,406 +1409,11 @@ var method = function (method){ return ({
     }
 }); }
 
-var __moduleExports$2 = function (str) {
-	return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
-		return '%' + c.charCodeAt(0).toString(16).toUpperCase();
-	});
-};
-
-/* eslint-disable no-unused-vars */
-var getOwnPropertySymbols = Object.getOwnPropertySymbols;
-var hasOwnProperty = Object.prototype.hasOwnProperty;
-var propIsEnumerable = Object.prototype.propertyIsEnumerable;
-
-function toObject(val) {
-	if (val === null || val === undefined) {
-		throw new TypeError('Object.assign cannot be called with null or undefined');
-	}
-
-	return Object(val);
-}
-
-function shouldUseNative() {
-	try {
-		if (!Object.assign) {
-			return false;
-		}
-
-		// Detect buggy property enumeration order in older V8 versions.
-
-		// https://bugs.chromium.org/p/v8/issues/detail?id=4118
-		var test1 = new String('abc');  // eslint-disable-line no-new-wrappers
-		test1[5] = 'de';
-		if (Object.getOwnPropertyNames(test1)[0] === '5') {
-			return false;
-		}
-
-		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
-		var test2 = {};
-		for (var i = 0; i < 10; i++) {
-			test2['_' + String.fromCharCode(i)] = i;
-		}
-		var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
-			return test2[n];
-		});
-		if (order2.join('') !== '0123456789') {
-			return false;
-		}
-
-		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
-		var test3 = {};
-		'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
-			test3[letter] = letter;
-		});
-		if (Object.keys(Object.assign({}, test3)).join('') !==
-				'abcdefghijklmnopqrst') {
-			return false;
-		}
-
-		return true;
-	} catch (err) {
-		// We don't expect any of the above to throw, but better to be safe.
-		return false;
-	}
-}
-
-var __moduleExports$3 = shouldUseNative() ? Object.assign : function (target, source) {
-	var arguments$1 = arguments;
-
-	var from;
-	var to = toObject(target);
-	var symbols;
-
-	for (var s = 1; s < arguments.length; s++) {
-		from = Object(arguments$1[s]);
-
-		for (var key in from) {
-			if (hasOwnProperty.call(from, key)) {
-				to[key] = from[key];
-			}
-		}
-
-		if (getOwnPropertySymbols) {
-			symbols = getOwnPropertySymbols(from);
-			for (var i = 0; i < symbols.length; i++) {
-				if (propIsEnumerable.call(from, symbols[i])) {
-					to[symbols[i]] = from[symbols[i]];
-				}
-			}
-		}
-	}
-
-	return to;
-};
-
-var strictUriEncode = __moduleExports$2;
-var objectAssign = __moduleExports$3;
-
-function encoderForArrayFormat(opts) {
-	switch (opts.arrayFormat) {
-		case 'index':
-			return function (key, value, index) {
-				return value === null ? [
-					encode(key, opts),
-					'[',
-					index,
-					']'
-				].join('') : [
-					encode(key, opts),
-					'[',
-					encode(index, opts),
-					']=',
-					encode(value, opts)
-				].join('');
-			};
-
-		case 'bracket':
-			return function (key, value) {
-				return value === null ? encode(key, opts) : [
-					encode(key, opts),
-					'[]=',
-					encode(value, opts)
-				].join('');
-			};
-
-		default:
-			return function (key, value) {
-				return value === null ? encode(key, opts) : [
-					encode(key, opts),
-					'=',
-					encode(value, opts)
-				].join('');
-			};
-	}
-}
-
-function parserForArrayFormat(opts) {
-	var result;
-
-	switch (opts.arrayFormat) {
-		case 'index':
-			return function (key, value, accumulator) {
-				result = /\[(\d*)\]$/.exec(key);
-
-				key = key.replace(/\[\d*\]$/, '');
-
-				if (!result) {
-					accumulator[key] = value;
-					return;
-				}
-
-				if (accumulator[key] === undefined) {
-					accumulator[key] = {};
-				}
-
-				accumulator[key][result[1]] = value;
-			};
-
-		case 'bracket':
-			return function (key, value, accumulator) {
-				result = /(\[\])$/.exec(key);
-				key = key.replace(/\[\]$/, '');
-
-				if (!result) {
-					accumulator[key] = value;
-					return;
-				} else if (accumulator[key] === undefined) {
-					accumulator[key] = [value];
-					return;
-				}
-
-				accumulator[key] = [].concat(accumulator[key], value);
-			};
-
-		default:
-			return function (key, value, accumulator) {
-				if (accumulator[key] === undefined) {
-					accumulator[key] = value;
-					return;
-				}
-
-				accumulator[key] = [].concat(accumulator[key], value);
-			};
-	}
-}
-
-function encode(value, opts) {
-	if (opts.encode) {
-		return opts.strict ? strictUriEncode(value) : encodeURIComponent(value);
-	}
-
-	return value;
-}
-
-function keysSorter(input) {
-	if (Array.isArray(input)) {
-		return input.sort();
-	} else if (typeof input === 'object') {
-		return keysSorter(Object.keys(input)).sort(function (a, b) {
-			return Number(a) - Number(b);
-		}).map(function (key) {
-			return input[key];
-		});
-	}
-
-	return input;
-}
-
-var extract = function (str) {
-	return str.split('?')[1] || '';
-};
-
-var parse = function (str, opts) {
-	opts = objectAssign({arrayFormat: 'none'}, opts);
-
-	var formatter = parserForArrayFormat(opts);
-
-	// Create an object with no prototype
-	// https://github.com/sindresorhus/query-string/issues/47
-	var ret = Object.create(null);
-
-	if (typeof str !== 'string') {
-		return ret;
-	}
-
-	str = str.trim().replace(/^(\?|#|&)/, '');
-
-	if (!str) {
-		return ret;
-	}
-
-	str.split('&').forEach(function (param) {
-		var parts = param.replace(/\+/g, ' ').split('=');
-		// Firefox (pre 40) decodes `%3D` to `=`
-		// https://github.com/sindresorhus/query-string/pull/37
-		var key = parts.shift();
-		var val = parts.length > 0 ? parts.join('=') : undefined;
-
-		// missing `=` should be `null`:
-		// http://w3.org/TR/2012/WD-url-20120524/#collect-url-parameters
-		val = val === undefined ? null : decodeURIComponent(val);
-
-		formatter(decodeURIComponent(key), val, ret);
-	});
-
-	return Object.keys(ret).sort().reduce(function (result, key) {
-		var val = ret[key];
-		if (Boolean(val) && typeof val === 'object' && !Array.isArray(val)) {
-			// Sort object keys, not values
-			result[key] = keysSorter(val);
-		} else {
-			result[key] = val;
-		}
-
-		return result;
-	}, Object.create(null));
-};
-
-var stringify = function (obj, opts) {
-	var defaults = {
-		encode: true,
-		strict: true,
-		arrayFormat: 'none'
-	};
-
-	opts = objectAssign(defaults, opts);
-
-	var formatter = encoderForArrayFormat(opts);
-
-	return obj ? Object.keys(obj).sort().map(function (key) {
-		var val = obj[key];
-
-		if (val === undefined) {
-			return '';
-		}
-
-		if (val === null) {
-			return encode(key, opts);
-		}
-
-		if (Array.isArray(val)) {
-			var result = [];
-
-			val.slice().forEach(function (val2) {
-				if (val2 === undefined) {
-					return;
-				}
-
-				result.push(formatter(key, val2, result.length));
-			});
-
-			return result.join('&');
-		}
-
-		return encode(key, opts) + '=' + encode(val, opts);
-	}).filter(function (x) {
-		return x.length > 0;
-	}).join('&') : '';
-};
-
-var index$2 = {
-	extract: extract,
-	parse: parse,
-	stringify: stringify
-};
-
 /**
  * 
  * params插件，用于设置params
  * 
  */
-
-var parseUrl = function (url) {
-    var ac = document.createElement('a')
-    ac.href = url
-    return ac
-}
-
-var appendUrl = function (ref) {
-    var query_string = ref.query_string;
-
-    return function (options, url, params) {
-    var ac = parseUrl(url)
-    ac.search = query_string.stringify(params, options)
-    return ac.href
-};
-}
-
-var extractUrl = function (ref) {
-    var query_string = ref.query_string;
-
-    return function (options, url) {
-    return query_string.parse(
-        query_string.extract(parseUrl(url).search),
-        options
-    )
-};
-}
-
-
-var extractParams = function (ref) {
-    var query_string = ref.query_string;
-    var form_data = ref.form_data;
-
-    return function (options, params) {
-    var result = {}
-    if (isStr$1(params)) {
-        return query_string.parse(params, options)
-    } else if (isForm(params)) {
-        return form_data.parse(params, options)
-    } else if (isObj$1(params)) {
-        return params
-    } else {
-        return result
-    }
-};
-}
-
-
-
-var transformParams = function (ref) {
-    var query_string = ref.query_string;
-    var form_data = ref.form_data;
-
-    return function (options, params) {
-
-    var is = function (type) { return contentTypeIs(options, type); }
-
-    if (is(['application', 'json'])) {
-        return JSON.stringify(params)
-    } else if (is(['multipart', 'formdata'])) {
-        removeHeader(options.headers, 'content-type')
-        return form_data.formify(params, options)
-    } else if (is(['application', 'x-www-form-urlencoded'])) {
-        return query_string.stringify(params, options)
-    }
-};
-}
-
-var filterParams = function (params, names) {
-    return Object.keys(params || {}).reduce(function (buf, key) {
-        if (names.indexOf(key) == -1) {
-            buf[key] = params[key]
-        }
-        return buf
-    }, {})
-}
-
-var pickParams = function (params, names) {
-    return Object.keys(params || {}).reduce(function (buf, key) {
-        if (names.indexOf(key) > -1) {
-            buf[key] = params[key]
-        }
-        return buf
-    }, {})
-}
-
-var createSerializer = function (context, options) { return function (method) {
-    var args = [], len = arguments.length - 1;
-    while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
-
-    return method(context.post('serializer', options)).apply(void 0, args)
-}; }
 
 var params = function (params) { return ({
 
@@ -2024,6 +2024,19 @@ var createParams = function (options) {
     }, [])
 }
 
+var mergeParams = function (data){
+    return {
+        processOption: function processOption(options){
+            var serialize = createSerializer(this, options)
+            options.params =  Object.assign(
+                serialize(extractParams, options, options.params),
+                serialize(extractParams, options, data)
+            )
+            return options
+        }
+    }
+}
+
 var http = function (args,_options) {
     var pluginService = createPluginService()
     var options = Object.assign({
@@ -2060,10 +2073,11 @@ var resource = function (url, _options) {
 
     var options = getOptions(url,_options)
 
-    var params$$ = createParams(options)
+    var params = createParams(options)
 
     return function (data) {
-        return http(params$$.concat(params(data)),options)
+        params.unshift(mergeParams(data))
+        return http(params,options)
     }
 }
 

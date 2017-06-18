@@ -1,4 +1,5 @@
 'use strict'
+import qs from 'query-string'
 import RecursiveIterator from 'recursive-iterator'
 export const isType = type => obj => Object.prototype.toString.call(obj) === `[object ${type}]`
 export const isFn = isType('Function')
@@ -191,4 +192,75 @@ export const process = (payload, previous, resolve, reject) => {
     }, (payload) => {
         return Promise.reject(reject ? reject(payload) : payload)
     })
+}
+
+export const parseUrl = (url) => {
+    const ac = document.createElement('a')
+    ac.href = url
+    return ac
+}
+
+export const appendUrl = ({ query_string }) => (options, url, params) => {
+    const ac = parseUrl(url)
+    ac.search = query_string.stringify(params, options)
+    return ac.href
+}
+
+export const extractUrl = ({ query_string }) => (options, url) => {
+    return query_string.parse(
+        query_string.extract(parseUrl(url).search),
+        options
+    )
+}
+
+
+export const extractParams = ({ query_string, form_data }) => (options, params) => {
+    const result = {}
+    if (isStr(params)) {
+        return query_string.parse(params, options)
+    } else if (isForm(params)) {
+        return form_data.parse(params, options)
+    } else if (isObj(params)) {
+        return params
+    } else {
+        return result
+    }
+}
+
+
+
+export const transformParams = ({ query_string, form_data }) => (options, params) => {
+
+    const is = type => contentTypeIs(options, type)
+
+    if (is(['application', 'json'])) {
+        return JSON.stringify(params)
+    } else if (is(['multipart', 'formdata'])) {
+        removeHeader(options.headers, 'content-type')
+        return form_data.formify(params, options)
+    } else if (is(['application', 'x-www-form-urlencoded'])) {
+        return query_string.stringify(params, options)
+    }
+}
+
+export const filterParams = (params, names) => {
+    return Object.keys(params || {}).reduce((buf, key) => {
+        if (names.indexOf(key) == -1) {
+            buf[key] = params[key]
+        }
+        return buf
+    }, {})
+}
+
+export const pickParams = (params, names) => {
+    return Object.keys(params || {}).reduce((buf, key) => {
+        if (names.indexOf(key) > -1) {
+            buf[key] = params[key]
+        }
+        return buf
+    }, {})
+}
+
+export const createSerializer = (context, options) => (method, ...args) => {
+    return method(context.post('serializer', options))(...args)
 }

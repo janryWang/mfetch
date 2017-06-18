@@ -1,9 +1,8 @@
 'use strict'
 import { createPluginService } from 'super-plugin'
-import { isFn, isObj, isStr } from './lang'
+import { isFn, isObj, isStr,createSerializer,extractParams } from './lang'
 import { core } from './core'
 import { createInterceptor } from './interceptor'
-
 import * as plugins from './plugins'
 
 let EXTENSIONS = []
@@ -33,6 +32,19 @@ const createParams = (options) => {
             return buf
         }
     }, [])
+}
+
+const mergeParams = (data)=>{
+    return {
+        processOption(options){
+            const serialize = createSerializer(this, options)
+            options.params =  Object.assign(
+                serialize(extractParams, options, options.params),
+                serialize(extractParams, options, data)
+            )
+            return options
+        }
+    }
 }
 
 const http = (args,_options) => {
@@ -74,7 +86,8 @@ export const resource = (url, _options) => {
     const params = createParams(options)
 
     return (data) => {
-        return http(params.concat(plugins.params(data)),options)
+        params.unshift(mergeParams(data))
+        return http(params,options)
     }
 }
 
