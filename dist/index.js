@@ -1998,7 +1998,7 @@ var plugins = Object.freeze({
 var EXTENSIONS = []
 
 
-var getOptions = function (url,options){
+var getOptions = function (url, options) {
     if (isStr$1(url)) {
         return Object.assign(
             { url: url },
@@ -2024,11 +2024,11 @@ var createParams = function (options) {
     }, [])
 }
 
-var mergeParams = function (data){
+var mergeParams = function (data) {
     return {
-        processOption: function processOption(options){
+        processBeforeOption: function processBeforeOption(options) {
             var serialize = createSerializer(this, options)
-            options.params =  Object.assign(
+            options.params = Object.assign(
                 serialize(extractParams, options, options.params),
                 serialize(extractParams, options, data)
             )
@@ -2037,7 +2037,7 @@ var mergeParams = function (data){
     }
 }
 
-var http = function (args,_options) {
+var http = function (args, _options) {
     var pluginService = createPluginService()
     var options = Object.assign({
         url: '/',
@@ -2046,7 +2046,7 @@ var http = function (args,_options) {
             'Accept': 'application/json',
             'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
         }
-    },_options)
+    }, _options)
 
     pluginService.extension(core)
     pluginService.extension(args)
@@ -2062,8 +2062,8 @@ var http = function (args,_options) {
 
 
 var fetch = function (url, _options) {
-    var options = getOptions(url,_options)
-    return http(createParams(options),options)
+    var options = getOptions(url, _options)
+    return http(createParams(options), options)
 }
 
 var resource = function (url, _options) {
@@ -2071,13 +2071,17 @@ var resource = function (url, _options) {
         return function (data) { return Promise.resolve(url(data)); }
     }
 
-    var options = getOptions(url,_options)
+    var options = getOptions(url, _options)
+
+    if (!('params' in options)) {
+        options.params = {}
+    }
 
     var params = createParams(options)
 
     return function (data) {
         params.unshift(mergeParams(data))
-        return http(params,options)
+        return http(params, options)
     }
 }
 
