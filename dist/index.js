@@ -1231,11 +1231,10 @@ var interceptors = {
 
     request: function request(fn) {
         return {
-            processOption: function processOption(options, previous) {
+            processAfterOption: function processAfterOption(options, previous) {
                 return process(options, previous, function (options) {
                     return isFn$1(fn) ? fn(options) : options
                 })
-
             }
         }
     },

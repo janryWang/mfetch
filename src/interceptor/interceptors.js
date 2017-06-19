@@ -4,11 +4,10 @@ export default {
 
     request(fn) {
         return {
-            processOption(options, previous) {
+            processAfterOption(options, previous) {
                 return process(options, previous, (options) => {
                     return isFn(fn) ? fn(options) : options
                 })
-
             }
         }
     },
