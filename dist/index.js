@@ -1166,6 +1166,64 @@ var core = {
             return this$1.post('response', this$1.post('fetch', options))
         })
 
+    },
+
+    processSerializer: function processSerializer(options) {
+        return {
+            query_string: {
+                parse: index$2.parse,
+                stringify: index$2.stringify,
+                extract: index$2.extract
+            },
+            form_data: {
+                parse: formdata2json,
+                formify: json2formdata
+            }
+        }
+    },
+
+    processAfterOption: function processAfterOption(options, previous) {
+        options = previous(options)
+
+        var varNames = options.uri ? options.uri.varNames : []
+
+        var serialize = createSerializer(this, options)
+
+        options.params = serialize(extractParams, options, options.params)
+
+        options.url = options.uri ? options.uri.fill(pickParams(options.params, varNames)) : options.url
+
+        delete options.uri
+
+        switch (getMethod(options)) {
+            case 'get':
+
+            case 'jsonp':
+
+            case 'head':
+
+                var url_params = Object.assign(
+                    serialize(extractUrl, options, options.url),
+                    filterParams(options.params, varNames)
+                )
+
+                options.url = serialize(appendUrl, options, options.url, url_params)
+                return options
+
+
+            default:
+
+                options.body = serialize(transformParams, options,
+                    Object.assign(
+                        serialize(extractParams, options, options.body),
+                        filterParams(options.params, varNames)
+                    )
+                )
+
+                return options
+
+        }
+
     }
 }
 
@@ -1406,73 +1464,6 @@ var method = function (method){ return ({
         } else {
             return previous(options)
         }
-    }
-}); }
-
-/**
- * 
- * params插件，用于设置params
- * 
- */
-
-var params = function (params) { return ({
-
-    processSerializer: function processSerializer(options) {
-        return {
-            query_string: {
-                parse: index$2.parse,
-                stringify: index$2.stringify,
-                extract: index$2.extract
-            },
-            form_data: {
-                parse: formdata2json,
-                formify: json2formdata
-            }
-        }
-    },
-
-    processOption: function processOption(options, previous) {
-        options = previous(options)
-
-        var varNames = options.uri ? options.uri.varNames : []
-
-        var serialize = createSerializer(this, options)
-
-        params = serialize(extractParams, options, params)
-
-        options.url = options.uri ? options.uri.fill(pickParams(params, varNames)) : options.url
-
-        delete options.uri
-
-        switch (getMethod(options)) {
-            case 'get':
-
-            case 'jsonp':
-
-            case 'head':
-
-                var url_params = Object.assign(
-                    serialize(extractUrl, options, options.url),
-                    filterParams(params, varNames)
-                )
-
-                options.url = serialize(appendUrl, options, options.url, url_params)
-                return options
-
-
-            default:
-
-                options.body = serialize(transformParams, options,
-                    Object.assign(
-                        serialize(extractParams, options, options.body),
-                        filterParams(params, varNames)
-                    )
-                )
-
-                return options
-
-        }
-
     }
 }); }
 
@@ -1990,7 +1981,6 @@ var plugins = Object.freeze({
 	body: body,
 	headers: headers,
 	method: method,
-	params: params,
 	url: url,
 	credentials: credentials
 });
@@ -2073,15 +2063,10 @@ var resource = function (url, _options) {
 
     var options = getOptions(url, _options)
 
-    if (!('params' in options)) {
-        options.params = {}
-    }
-
     var params = createParams(options)
 
     return function (data) {
-        params.unshift(mergeParams(data))
-        return http(params, options)
+        return http([mergeParams(data)].concat(params), options)
     }
 }
 

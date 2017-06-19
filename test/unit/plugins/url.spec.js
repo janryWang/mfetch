@@ -22,7 +22,7 @@ describe('sample url', () => {
                 should.exist(options.url)
             },
             'should be equal //aa.bb.cc': (options) => {
-                options.url.should.be.equal('//aa.bb.cc')
+                options.url.should.be.containEql('//aa.bb.cc')
             }
         })
     })
@@ -34,7 +34,7 @@ describe('sample url', () => {
                 should.exist(options.url)
             },
             'should be equal //aa.bb.cc': (options) => {
-                options.url.should.be.equal('//aa.bb.cc')
+                options.url.should.be.containEql('//aa.bb.cc')
             }
         })
     })
@@ -46,7 +46,7 @@ describe('sample url', () => {
                 should.exist(options.url)
             },
             'should be equal /aa/bb/cc': (options) => {
-                options.url.should.be.equal('/aa/bb/cc')
+                options.url.should.be.containEql('/aa/bb/cc')
             }
         })
     })
@@ -94,7 +94,7 @@ describe('sample url with hash', () => {
                 should.exist(options.url)
             },
             'should be equal //aa.bb.cc?aa=bb&cc=dd#/asdd/bb/mmm': (options) => {
-                options.url.should.be.equal('//aa.bb.cc?aa=bb&cc=dd#/asdd/bb/mmm')
+                options.url.should.be.containEql('//aa.bb.cc/?aa=bb&cc=dd#/asdd/bb/mmm')
             }
         })
     })

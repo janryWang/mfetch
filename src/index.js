@@ -83,15 +83,10 @@ export const resource = (url, _options) => {
 
     const options = getOptions(url, _options)
 
-    if (!('params' in options)) {
-        options.params = {}
-    }
-
     const params = createParams(options)
 
     return (data) => {
-        params.unshift(mergeParams(data))
-        return http(params, options)
+        return http([mergeParams(data)].concat(params), options)
     }
 }
 
