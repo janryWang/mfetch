@@ -2027,7 +2027,6 @@ var mergeParams = function (data) {
 }
 
 var http = function (args, _options) {
-    var pluginService = createPluginService()
     var options = Object.assign({
         url: '/',
         method: 'get',
@@ -2036,6 +2035,15 @@ var http = function (args, _options) {
             'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
         }
     }, _options)
+    var pluginService = createPluginService((function () {
+        function Context () {}
+
+        Context.prototype.options = function options$1 (){
+            return options
+        };
+
+        return Context;
+    }()))
 
     pluginService.extension(core)
     pluginService.extension(args)
