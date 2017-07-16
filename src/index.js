@@ -48,7 +48,6 @@ const mergeParams = (data) => {
 }
 
 const http = (args, _options) => {
-    const pluginService = createPluginService()
     const options = Object.assign({
         url: '/',
         method: 'get',
@@ -57,6 +56,11 @@ const http = (args, _options) => {
             'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
         }
     }, _options)
+    const pluginService = createPluginService(class Context {
+        options(){
+            return options
+        }
+    })
 
     pluginService.extension(core)
     pluginService.extension(args)
