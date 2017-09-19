@@ -6,7 +6,7 @@ export default {
         return {
             processAfterOption(options, previous) {
                 return process(options, previous, (options) => {
-                    return isFn(fn) ? fn(options) : options
+                    return isFn(fn) ? fn(options,this.options) : options
                 })
             }
         }
@@ -16,7 +16,7 @@ export default {
         return {
             processResponse(promise, previous) {
                 return process(promise, previous, (payload) => {
-                    return isFn(fn) ? fn(payload) : payload
+                    return isFn(fn) ? fn(payload,this.options) : payload
                 })
             }
         }
@@ -26,7 +26,7 @@ export default {
         return {
             processResponse(promise, previous) {
                 return process(promise, previous, (payload) => {
-                    return isFn(fn) ? fn(payload) : payload
+                    return isFn(fn) ? fn(payload,this.options) : payload
                 })
             }
         }
@@ -36,7 +36,7 @@ export default {
         return {
             processResponse(promise, previous) {
                 return process(promise, previous, (payload) => payload, (payload) => {
-                    return isFn(fn) ? fn(payload) : payload
+                    return isFn(fn) ? fn(payload,this.options) : payload
                 })
             }
         }

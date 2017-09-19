@@ -1144,6 +1144,7 @@ var core = {
 
     processFetch: function processFetch(options, previous) {
         options = previous(options)
+        this.options = options
         return window.fetch(options.url, options)
     },
 
@@ -1232,8 +1233,10 @@ var interceptors = {
     request: function request(fn) {
         return {
             processAfterOption: function processAfterOption(options, previous) {
+                var this$1 = this;
+
                 return process(options, previous, function (options) {
-                    return isFn$1(fn) ? fn(options) : options
+                    return isFn$1(fn) ? fn(options,this$1.options) : options
                 })
             }
         }
@@ -1242,8 +1245,10 @@ var interceptors = {
     response: function response(fn) {
         return {
             processResponse: function processResponse(promise, previous) {
+                var this$1 = this;
+
                 return process(promise, previous, function (payload) {
-                    return isFn$1(fn) ? fn(payload) : payload
+                    return isFn$1(fn) ? fn(payload,this$1.options) : payload
                 })
             }
         }
@@ -1252,8 +1257,10 @@ var interceptors = {
     resolve: function resolve(fn) {
         return {
             processResponse: function processResponse(promise, previous) {
+                var this$1 = this;
+
                 return process(promise, previous, function (payload) {
-                    return isFn$1(fn) ? fn(payload) : payload
+                    return isFn$1(fn) ? fn(payload,this$1.options) : payload
                 })
             }
         }
@@ -1262,8 +1269,10 @@ var interceptors = {
     reject: function reject(fn) {
         return {
             processResponse: function processResponse(promise, previous) {
+                var this$1 = this;
+
                 return process(promise, previous, function (payload) { return payload; }, function (payload) {
-                    return isFn$1(fn) ? fn(payload) : payload
+                    return isFn$1(fn) ? fn(payload,this$1.options) : payload
                 })
             }
         }

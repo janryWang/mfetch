@@ -20,6 +20,7 @@ export const core = {
 
     processFetch(options, previous) {
         options = previous(options)
+        this.options = options
         return window.fetch(options.url, options)
     },
 
