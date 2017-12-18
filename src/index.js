@@ -62,6 +62,10 @@ const http = (args, _options) => {
         }
     })
 
+    if(options.data){
+        options.params = options.params
+    }
+
     pluginService.extension(core)
     pluginService.extension(args)
     pluginService.extension(EXTENSIONS)

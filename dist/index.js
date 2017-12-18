@@ -2054,6 +2054,10 @@ var http = function (args, _options) {
         return Context;
     }()))
 
+    if(options.data){
+        options.params = options.params
+    }
+
     pluginService.extension(core)
     pluginService.extension(args)
     pluginService.extension(EXTENSIONS)
