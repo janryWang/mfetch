@@ -2055,7 +2055,7 @@ var http = function (args, _options) {
     }()))
 
     if(options.data){
-        options.params = options.params
+        options.params = options.data
     }
 
     pluginService.extension(core)
