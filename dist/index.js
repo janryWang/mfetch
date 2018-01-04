@@ -2070,10 +2070,16 @@ var http = function (args, _options) {
     )
 }
 
+var monkey_patch_fetch
 
 var fetch = function (url, _options) {
     var options = getOptions(url, _options)
+    if(monkey_patch_fetch) return monkey_patch_fetch(options)
     return http(createParams(options), options)
+}
+
+var patch = function (fetch){
+    monkey_patch_fetch = fetch
 }
 
 var resource = function (url, _options) {
@@ -2103,6 +2109,7 @@ var interceptor = function (specs) {
 }
 
 exports.fetch = fetch;
+exports.patch = patch;
 exports.resource = resource;
 exports.extension = extension;
 exports.interceptor = interceptor;

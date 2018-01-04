@@ -78,10 +78,16 @@ const http = (args, _options) => {
     )
 }
 
+let monkey_patch_fetch
 
 export const fetch = (url, _options) => {
     const options = getOptions(url, _options)
+    if(monkey_patch_fetch) return monkey_patch_fetch(options)
     return http(createParams(options), options)
+}
+
+export const patch = (fetch)=>{
+    monkey_patch_fetch = fetch
 }
 
 export const resource = (url, _options) => {
