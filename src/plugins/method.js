@@ -1,5 +1,5 @@
 import fetchJSONP from 'fetch-jsonp'
-import {lowerCase} from '../lang'
+import {lowerCase,removeHeader} from '../lang'
 
 /**
  * 
@@ -11,6 +11,9 @@ export const method = (method)=>({
     processOption(options,previous){
         options = previous(options)
         options.method = lowerCase(method)
+        if(options.method.indexOf("get") > -1 && options.headers){
+            options.headers = removeHeader(headers,'content-type')
+        }
         return options
     },
 
