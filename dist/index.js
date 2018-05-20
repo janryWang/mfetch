@@ -1320,7 +1320,7 @@ var body = function (body){ return ({
  * 
  */
 
-var headers$1 = function (headers){ return ({
+var headers = function (headers){ return ({
     processOption: function processOption(options,previous){
         options = previous(options)
 
@@ -1464,7 +1464,7 @@ var method = function (method){ return ({
         options = previous(options)
         options.method = lowerCase$1(method)
         if(options.method.indexOf("get") > -1 && options.headers){
-            options.headers = removeHeader(headers,'content-type')
+            options.headers = removeHeader(options.headers,'content-type')
         }
         return options
     },
@@ -1990,7 +1990,7 @@ var credentials = function (credentials){ return ({
 
 var plugins = Object.freeze({
 	body: body,
-	headers: headers$1,
+	headers: headers,
 	method: method,
 	url: url,
 	credentials: credentials
