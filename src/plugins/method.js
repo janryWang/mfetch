@@ -12,7 +12,7 @@ export const method = (method)=>({
         options = previous(options)
         options.method = lowerCase(method)
         if(options.method.indexOf("get") > -1 && options.headers){
-            options.headers = removeHeader(headers,'content-type')
+            options.headers = removeHeader(options.headers,'content-type')
         }
         return options
     },
