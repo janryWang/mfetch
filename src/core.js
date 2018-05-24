@@ -29,14 +29,29 @@ export const core = {
             if (isNumber(options.timeout)) {
                 const {timeout} = options
                 delete options['timeout']
-                return this.post('response',
-                    new Promise((resolve, reject) => {
-                        setTimeout(function () {
-                            reject(new Error(`[mfetch Error] request "${options.url}" is timeout!`))
-                        }, timeout)
-                        this.post('fetch', options).then(resolve, reject)
-                    })
-                )
+
+                let abort
+
+                let abort_promise = new Promise((resolve,reject)=>{
+                    abort = (err)=>{
+                        reject(err)
+                    }
+                })
+
+                setTimeout(function () {
+                    let err = new Error(`[MFETCH Error] request "${options.url}" is timeout!`)
+                    err.isTimeout = true
+                    abort(err)
+                }, timeout)
+
+                let promise = Promise.race([
+                    this.post('fetch', options),
+                    abort_promise
+                ])
+
+                promise.abort = abort
+
+                return this.post('response',promise)
             }
             return this.post('response', this.post('fetch', options))
         })

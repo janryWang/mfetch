@@ -1155,14 +1155,29 @@ var core = {
             if (isNumber(options.timeout)) {
                 var timeout = options.timeout;
                 delete options['timeout']
-                return this$1.post('response',
-                    new Promise(function (resolve, reject) {
-                        setTimeout(function () {
-                            reject(new Error(("[mfetch Error] request \"" + (options.url) + "\" is timeout!")))
-                        }, timeout)
-                        this$1.post('fetch', options).then(resolve, reject)
-                    })
-                )
+
+                var abort
+
+                var abort_promise = new Promise(function (resolve,reject){
+                    abort = function (err){
+                        reject(err)
+                    }
+                })
+
+                setTimeout(function () {
+                    var err = new Error(("[MFETCH Error] request \"" + (options.url) + "\" is timeout!"))
+                    err.isTimeout = true
+                    abort(err)
+                }, timeout)
+
+                var promise = Promise.race([
+                    this$1.post('fetch', options),
+                    abort_promise
+                ])
+
+                promise.abort = abort
+
+                return this$1.post('response',promise)
             }
             return this$1.post('response', this$1.post('fetch', options))
         })
