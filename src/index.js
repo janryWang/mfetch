@@ -9,7 +9,7 @@ let EXTENSIONS = []
 
 
 const getOptions = (url, options) => {
-    if (isStr(url)) {
+    if (isStr(url) || url instanceof URL) {
         return Object.assign(
             { url },
             options

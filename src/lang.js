@@ -195,6 +195,7 @@ export const process = (payload, previous, resolve, reject) => {
 }
 
 export const parseUrl = (url) => {
+    if(url instanceof URL) return url
     const ac = document.createElement('a')
     ac.href = url
     return ac

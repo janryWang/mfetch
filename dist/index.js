@@ -1049,6 +1049,7 @@ var process = function (payload, previous, resolve, reject) {
 }
 
 var parseUrl = function (url) {
+    if(url instanceof URL) return url
     var ac = document.createElement('a')
     ac.href = url
     return ac
@@ -2015,7 +2016,7 @@ var EXTENSIONS = []
 
 
 var getOptions = function (url, options) {
-    if (isStr$1(url)) {
+    if (isStr$1(url) || url instanceof URL) {
         return Object.assign(
             { url: url },
             options
