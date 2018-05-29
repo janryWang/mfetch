@@ -239,7 +239,7 @@ export const transformParams = ({ query_string, form_data }) => (options, params
     } else if (is(['multipart', 'formdata']) || is(['multipart', 'form-data'])) {
         removeHeader(options.headers, 'content-type')
         return form_data.formify(params, options)
-    } else if (is(['application', 'x-www-form-urlencoded'])) {
+    } else {
         return query_string.stringify(params, options)
     }
 }
