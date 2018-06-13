@@ -1248,7 +1248,7 @@ var interceptors = {
 
     request: function request(fn) {
         return {
-            processAfterOption: function processAfterOption(options, previous) {
+            subOption: function subOption(options, previous) {
                 var this$1 = this;
 
                 return process(options, previous, function (options) {
@@ -2014,18 +2014,11 @@ var plugins = Object.freeze({
 
 var EXTENSIONS = []
 
-
 var getOptions = function (url, options) {
     if (isStr$1(url) || url instanceof URL) {
-        return Object.assign(
-            { url: url },
-            options
-        )
+        return Object.assign({ url: url }, options)
     } else if (isObj$1(url)) {
-        return Object.assign(
-            url,
-            options
-        )
+        return Object.assign(url, options)
     }
 
     return {}
@@ -2055,35 +2048,47 @@ var mergeParams = function (data) {
 }
 
 var http = function (args, _options) {
-    var options = Object.assign({
-        url: '/',
-        method: 'get',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-        }
-    }, _options)
-    var pluginService = createPluginService((function () {
+    var options = Object.assign(
+        {
+            url: "/",
+            method: "get",
+            headers: {
+                Accept: "application/json",
+                "Content-Type":
+                    "application/x-www-form-urlencoded;charset=UTF-8"
+            }
+        },
+        _options
+    )
+    var pluginService = createPluginService(
+        (function () {
         function Context () {}
 
-        Context.prototype.options = function options$1 (){
-            return options
-        };
+        Context.prototype.options = function options$1 () {
+                return options
+            };
 
         return Context;
-    }()))
+    }())
+    )
 
-    if(options.data){
+    if (options.data) {
         options.params = options.data
     }
 
     pluginService.extension(core)
     pluginService.extension(args)
     pluginService.extension(EXTENSIONS)
-    return pluginService.post('request',
-        pluginService.post('afterOption',
-            pluginService.post('option',
-                pluginService.post('beforeOption', options)
+    return pluginService.post(
+        "request",
+        pluginService.post(
+            "afterOption",
+            pluginService.post(
+                "subOption",
+                pluginService.post(
+                    "option",
+                    pluginService.post("beforeOption", options)
+                )
             )
         )
     )
@@ -2093,11 +2098,11 @@ var monkey_patch_fetch
 
 var fetch = function (url, _options) {
     var options = getOptions(url, _options)
-    if(monkey_patch_fetch) return monkey_patch_fetch(options)
+    if (monkey_patch_fetch) return monkey_patch_fetch(options)
     return http(createParams(options), options)
 }
 
-var patch = function (fetch){
+var patch = function (fetch) {
     monkey_patch_fetch = fetch
 }
 
@@ -2121,7 +2126,6 @@ var extension = function () {
 
     EXTENSIONS = EXTENSIONS.concat(args)
 }
-
 
 var interceptor = function (specs) {
     EXTENSIONS = EXTENSIONS.concat(createInterceptor(specs))

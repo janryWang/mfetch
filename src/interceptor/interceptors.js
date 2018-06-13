@@ -4,7 +4,7 @@ export default {
 
     request(fn) {
         return {
-            processAfterOption(options, previous) {
+            subOption(options, previous) {
                 return process(options, previous, (options) => {
                     return isFn(fn) ? fn(options,this.options) : options
                 })
