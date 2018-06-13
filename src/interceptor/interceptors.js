@@ -4,7 +4,7 @@ export default {
 
     request(fn) {
         return {
-            afterOption(options, previous) {
+            processAfterOption(options, previous) {
                 return Promise.resolve(isFn(fn) ? fn(options,this.options) : options).then((options)=>{
                     return previous(options)
                 })

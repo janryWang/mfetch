@@ -1249,7 +1249,7 @@ var interceptors = {
 
     request: function request(fn) {
         return {
-            afterOption: function afterOption(options, previous) {
+            processAfterOption: function processAfterOption(options, previous) {
                 return Promise.resolve(isFn$1(fn) ? fn(options,this.options) : options).then(function (options){
                     return previous(options)
                 })
