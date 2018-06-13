@@ -4,9 +4,9 @@ export default {
 
     request(fn) {
         return {
-            subOption(options, previous) {
-                return process(options, previous, (options) => {
-                    return isFn(fn) ? fn(options,this.options) : options
+            afterOption(options, previous) {
+                return Promise.resolve(isFn(fn) ? fn(options,this.options) : options).then((options)=>{
+                    return previous(options)
                 })
             }
         }

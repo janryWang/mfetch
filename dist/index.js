@@ -1048,6 +1048,7 @@ var process = function (payload, previous, resolve, reject) {
     })
 }
 
+
 var parseUrl = function (url) {
     if(url instanceof URL) return url
     var ac = document.createElement('a')
@@ -1248,11 +1249,9 @@ var interceptors = {
 
     request: function request(fn) {
         return {
-            subOption: function subOption(options, previous) {
-                var this$1 = this;
-
-                return process(options, previous, function (options) {
-                    return isFn$1(fn) ? fn(options,this$1.options) : options
+            afterOption: function afterOption(options, previous) {
+                return Promise.resolve(isFn$1(fn) ? fn(options,this.options) : options).then(function (options){
+                    return previous(options)
                 })
             }
         }
@@ -2084,11 +2083,8 @@ var http = function (args, _options) {
         pluginService.post(
             "afterOption",
             pluginService.post(
-                "subOption",
-                pluginService.post(
-                    "option",
-                    pluginService.post("beforeOption", options)
-                )
+                "option",
+                pluginService.post("beforeOption", options)
             )
         )
     )

@@ -73,11 +73,8 @@ const http = (args, _options) => {
         pluginService.post(
             "afterOption",
             pluginService.post(
-                "subOption",
-                pluginService.post(
-                    "option",
-                    pluginService.post("beforeOption", options)
-                )
+                "option",
+                pluginService.post("beforeOption", options)
             )
         )
     )
