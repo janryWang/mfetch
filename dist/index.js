@@ -1980,7 +1980,12 @@ var url = function (url) { return ({
         options = previous(options)
         options.url = url
         if (options.uriTemplate) {
-            options.uri = new uriTemplates(String(url))
+            if(url instanceof URL){
+                url = url.href
+            } else {
+                url = String(url || "")
+            }
+            options.uri = new uriTemplates(String(decodeURIComponent(url)))
             delete options.uriTemplate
         }
         return options
