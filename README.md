@@ -1,5 +1,7 @@
 # mfetch
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/janryWang/mfetch.svg)](https://greenkeeper.io/)
+
 mfetch will provide you with a strong ability to request resource management, at the same time, you can use it very simply
 
 # Installation
