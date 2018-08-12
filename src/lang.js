@@ -181,6 +181,8 @@ export const mergeHeaders = (oldHeaders, newHeaders) => {
         const oldKey = findHeaderKey(buf, key)
         if (oldKey) {
             buf[oldKey] = newHeaders[key]
+        } else {
+            buf[key] = newHeaders[key]
         }
         return buf
     }, oldHeaders || {})
