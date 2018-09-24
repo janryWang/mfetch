@@ -850,12 +850,16 @@ return /******/ (function(modules) { // webpackBootstrap
 var RecursiveIterator = unwrapExports(recursiveIterator);
 
 var isType$1 = function (type) { return function (obj) { return Object.prototype.toString.call(obj) === ("[object " + type + "]"); }; }
-var isFn$1 = isType$1('Function')
+var isFn$2 = isType$1('Function')
 var isArr$1 = Array.isArray || isType$1('Array')
-var isObj$1 = isType$1('Object')
-var isStr$1 = isType$1('String')
+var isObj$2 = isType$1('Object')
+var isStr$2 = isType$1('String')
+var isNum$1 = isType$1('Number')
+var isIter = function (obj) { return (isArr$1(obj) || isObj$2(obj)); }
 var isForm = isType$1('FormData')
+var isFile = isType$1('File')
 var isUndefined = isType$1('Undefined')
+var isNull = isType$1('Null')
 var isNumber = isType$1('Number')
 
 
@@ -892,7 +896,7 @@ function toName(path) {
  * @returns {FormData}
  */
 function json2formdata(object) {
-    if (!isObj$1(object)) {
+    if (!isObj$2(object)) {
         throw new TypeError('Argument must be object');
     }
 
@@ -978,7 +982,7 @@ var equalHeader = function (key1, key2) {
 }
 
 var header = function (target) {
-    return cleanMs(isArr$1(target) ? target.join('/') : isStr$1(target) ? target : '')
+    return cleanMs(isArr$1(target) ? target.join('/') : isStr$2(target) ? target : '')
 }
 
 var getHeaderKeys = function (headers) {
@@ -1080,17 +1084,17 @@ var extractUrl = function (ref) {
 }
 
 
-var extractParams = function (ref) {
+var extractParams$1 = function (ref) {
     var query_string = ref.query_string;
     var form_data = ref.form_data;
 
     return function (options, params) {
     var result = {}
-    if (isStr$1(params)) {
+    if (isStr$2(params)) {
         return query_string.parse(params, options)
     } else if (isForm(params)) {
         return form_data.parse(params, options)
-    } else if (isObj$1(params)) {
+    } else if (isObj$2(params)) {
         return params
     } else {
         return result
@@ -1137,12 +1141,49 @@ var pickParams = function (params, names) {
     }, {})
 }
 
-var createSerializer = function (context, options) { return function (method) {
+var createSerializer$1 = function (context, options) { return function (method) {
     var args = [], len = arguments.length - 1;
     while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
 
     return method(context.post('serializer', options)).apply(void 0, args)
 }; }
+
+var utils$1 = Object.freeze({
+    isType: isType$1,
+    isFn: isFn$2,
+    isArr: isArr$1,
+    isObj: isObj$2,
+    isStr: isStr$2,
+    isNum: isNum$1,
+    isIter: isIter,
+    isForm: isForm,
+    isFile: isFile,
+    isUndefined: isUndefined,
+    isNull: isNull,
+    isNumber: isNumber,
+    lowerCase: lowerCase$1,
+    getMethod: getMethod,
+    json2formdata: json2formdata,
+    formdata2json: formdata2json,
+    cleanMs: cleanMs,
+    header: header,
+    getHeaderKeys: getHeaderKeys,
+    hasHeader: hasHeader,
+    findHeaderKey: findHeaderKey,
+    getHeader: getHeader,
+    removeHeader: removeHeader,
+    contentTypeIs: contentTypeIs,
+    mergeHeaders: mergeHeaders,
+    process: process,
+    parseUrl: parseUrl,
+    appendUrl: appendUrl,
+    extractUrl: extractUrl,
+    extractParams: extractParams$1,
+    transformParams: transformParams,
+    filterParams: filterParams,
+    pickParams: pickParams,
+    createSerializer: createSerializer$1
+});
 
 var core = {
 
@@ -1207,9 +1248,9 @@ var core = {
 
         var varNames = options.uri ? options.uri.varNames : []
 
-        var serialize = createSerializer(this, options)
+        var serialize = createSerializer$1(this, options)
 
-        options.params = serialize(extractParams, options, options.params)
+        options.params = serialize(extractParams$1, options, options.params)
 
         options.url = options.uri ? options.uri.fill(pickParams(options.params, varNames)) : options.url
 
@@ -1235,7 +1276,7 @@ var core = {
 
                 options.body = serialize(transformParams, options,
                     Object.assign(
-                        serialize(extractParams, options, options.body),
+                        serialize(extractParams$1, options, options.body),
                         filterParams(options.params, varNames)
                     )
                 )
@@ -1252,7 +1293,7 @@ var interceptors = {
     request: function request(fn) {
         return {
             processAfterOption: function processAfterOption(options, previous) {
-                return Promise.resolve(isFn$1(fn) ? fn(options,this.options) : options).then(function (options){
+                return Promise.resolve(isFn$2(fn) ? fn(options,this.options) : options).then(function (options){
                     return previous(options)
                 })
             }
@@ -1265,7 +1306,7 @@ var interceptors = {
                 var this$1 = this;
 
                 return process(promise, previous, function (payload) {
-                    return isFn$1(fn) ? fn(payload,this$1.options) : payload
+                    return isFn$2(fn) ? fn(payload,this$1.options) : payload
                 })
             }
         }
@@ -1277,7 +1318,7 @@ var interceptors = {
                 var this$1 = this;
 
                 return process(promise, previous, function (payload) {
-                    return isFn$1(fn) ? fn(payload,this$1.options) : payload
+                    return isFn$2(fn) ? fn(payload,this$1.options) : payload
                 })
             }
         }
@@ -1289,7 +1330,7 @@ var interceptors = {
                 var this$1 = this;
 
                 return process(promise, previous, function (payload) { return payload; }, function (payload) {
-                    return isFn$1(fn) ? fn(payload,this$1.options) : payload
+                    return isFn$2(fn) ? fn(payload,this$1.options) : payload
                 })
             }
         }
@@ -1299,7 +1340,7 @@ var interceptors = {
 
 var createInterceptor = function (specs) {
     return Object.keys(specs || {}).reduce(function (buf,key){
-        if(interceptors[key] && isFn$1(specs[key])){
+        if(interceptors[key] && isFn$2(specs[key])){
             return buf.concat(
                 interceptors[key](
                     specs[key].bind(specs)
@@ -2018,121 +2059,124 @@ var plugins = Object.freeze({
 	credentials: credentials
 });
 
+var isFn = isFn$2;
+var isObj = isObj$2;
+var isStr = isStr$2;
+var createSerializer = createSerializer$1;
+var extractParams = extractParams$1;
+
 var EXTENSIONS = []
 
 var getOptions = function (url, options) {
-    if (isStr$1(url) || url instanceof URL) {
-        return Object.assign({ url: url }, options)
-    } else if (isObj$1(url)) {
-        return Object.assign(url, options)
-    }
+  if (isStr(url) || url instanceof URL) {
+    return Object.assign({ url: url }, options)
+  } else if (isObj(url)) {
+    return Object.assign(url, options)
+  }
 
-    return {}
+  return {}
 }
 
 var createParams = function (options) {
-    return Object.keys(options).reduce(function (buf, key) {
-        if (plugins[key]) {
-            return buf.concat(plugins[key](options[key]))
-        } else {
-            return buf
-        }
-    }, [])
+  return Object.keys(options).reduce(function (buf, key) {
+    if (plugins[key]) {
+      return buf.concat(plugins[key](options[key]))
+    } else {
+      return buf
+    }
+  }, [])
 }
 
 var mergeParams = function (data) {
-    return {
-        processBeforeOption: function processBeforeOption(options) {
-            var serialize = createSerializer(this, options)
-            options.params = Object.assign(
-                serialize(extractParams, options, options.params),
-                serialize(extractParams, options, data)
-            )
-            return options
-        }
+  return {
+    processBeforeOption: function processBeforeOption(options) {
+      var serialize = createSerializer(this, options)
+      options.params = Object.assign(
+        serialize(extractParams, options, options.params),
+        serialize(extractParams, options, data)
+      )
+      return options
     }
+  }
 }
 
 var http = function (args, _options) {
-    var options = Object.assign(
-        {
-            url: "/",
-            method: "get",
-            headers: {
-                Accept: "application/json",
-                "Content-Type":
-                    "application/x-www-form-urlencoded;charset=UTF-8"
-            }
-        },
-        _options
+  var options = Object.assign(
+    {
+      url: '/',
+      method: 'get',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+      }
+    },
+    _options
+  )
+  var pluginService = createPluginService(
+    (function () {
+    function Context () {}
+
+    Context.prototype.options = function options$1 () {
+        return options
+      };
+
+    return Context;
+  }())
+  )
+
+  if (options.data) {
+    options.params = options.data
+  }
+
+  pluginService.extension(core)
+  pluginService.extension(args)
+  pluginService.extension(EXTENSIONS)
+  return pluginService.post(
+    'request',
+    pluginService.post(
+      'afterOption',
+      pluginService.post('option', pluginService.post('beforeOption', options))
     )
-    var pluginService = createPluginService(
-        (function () {
-        function Context () {}
-
-        Context.prototype.options = function options$1 () {
-                return options
-            };
-
-        return Context;
-    }())
-    )
-
-    if (options.data) {
-        options.params = options.data
-    }
-
-    pluginService.extension(core)
-    pluginService.extension(args)
-    pluginService.extension(EXTENSIONS)
-    return pluginService.post(
-        "request",
-        pluginService.post(
-            "afterOption",
-            pluginService.post(
-                "option",
-                pluginService.post("beforeOption", options)
-            )
-        )
-    )
+  )
 }
 
 var monkey_patch_fetch
 
 var fetch = function (url, _options) {
-    var options = getOptions(url, _options)
-    if (monkey_patch_fetch) return monkey_patch_fetch(options)
-    return http(createParams(options), options)
+  var options = getOptions(url, _options)
+  if (monkey_patch_fetch) return monkey_patch_fetch(options)
+  return http(createParams(options), options)
 }
 
 var patch = function (fetch) {
-    monkey_patch_fetch = fetch
+  monkey_patch_fetch = fetch
 }
 
 var resource = function (url, _options) {
-    if (isFn$1(url)) {
-        return function (data) { return Promise.resolve(url(data)); }
-    }
+  if (isFn(url)) {
+    return function (data) { return Promise.resolve(url(data)); }
+  }
 
-    var options = getOptions(url, _options)
+  var options = getOptions(url, _options)
 
-    var params = createParams(options)
+  var params = createParams(options)
 
-    return function (data) {
-        return http([mergeParams(data)].concat(params), options)
-    }
+  return function (data) {
+    return http([mergeParams(data)].concat(params), options)
+  }
 }
 
 var extension = function () {
-    var args = [], len = arguments.length;
-    while ( len-- ) args[ len ] = arguments[ len ];
+  var args = [], len = arguments.length;
+  while ( len-- ) args[ len ] = arguments[ len ];
 
-    EXTENSIONS = EXTENSIONS.concat(args)
+  EXTENSIONS = EXTENSIONS.concat(args)
 }
 
 var interceptor = function (specs) {
-    EXTENSIONS = EXTENSIONS.concat(createInterceptor(specs))
+  EXTENSIONS = EXTENSIONS.concat(createInterceptor(specs))
 }
+Object.assign(module.exports, utils$1)
 
 exports.fetch = fetch;
 exports.patch = patch;
