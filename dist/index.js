@@ -123,16 +123,24 @@ var _utils = __moduleExports$1;
 
 function createPluginService(Context) {
     var processors = (0, _utils.obj)();
+    var cacheName = (0, _utils.obj)();
     Context = Context || (0, _utils.noop)();
 
     function inject(name, processor, fn) {
         return function (payload) {
-            return processor.call(new Context(payload), payload, (0, _utils.getFn)(fn, payload));
+            var ctx = new Context(payload);
+            var previous = (0, _utils.getFn)(fn, payload);
+            if ((0, _types.isFn)(ctx.beforeEach)) ctx.beforeEach(payload);
+            var result = processor.call(ctx, payload, previous);
+            if ((0, _types.isFn)(ctx.afterEach)) ctx.afterEach(result);
+            return result;
         };
     }
 
     function getProcessName(name) {
-        return (0, _utils.lowerCase)(name).replace(/process/i, '');
+        if (cacheName[name]) return cacheName[name];
+        cacheName[name] = (0, _utils.lowerCase)(name).replace(/process/i, '');
+        return cacheName[name];
     }
 
     function process(name, processor) {
@@ -1477,6 +1485,9 @@ var fetchJsonp = createCommonjsModule(function (module, exports) {
 
         clearFunction(callbackFunction);
         removeScript(scriptId);
+        window[callbackFunction] = function () {
+          clearFunction(callbackFunction);
+        };
       }, timeout);
 
       // Caught if got 404/500
@@ -2100,18 +2111,7 @@ var mergeParams = function (data) {
   }
 }
 
-var http = function (args, _options) {
-  var options = Object.assign(
-    {
-      url: '/',
-      method: 'get',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-      }
-    },
-    _options
-  )
+var http = function (args, options) {
   var pluginService = createPluginService(
     (function () {
     function Context () {}
@@ -2143,7 +2143,19 @@ var http = function (args, _options) {
 var monkey_patch_fetch
 
 var fetch = function (url, _options) {
-  var options = getOptions(url, _options)
+  var options = getOptions(
+    url,
+    Object.assign(
+      {
+        method: 'get',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+        }
+      },
+      _options
+    )
+  )
   if (monkey_patch_fetch) return monkey_patch_fetch(options)
   return http(createParams(options), options)
 }

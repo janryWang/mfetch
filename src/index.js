@@ -42,18 +42,7 @@ const mergeParams = data => {
   }
 }
 
-const http = (args, _options) => {
-  const options = Object.assign(
-    {
-      url: '/',
-      method: 'get',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-      }
-    },
-    _options
-  )
+const http = (args, options) => {
   const pluginService = createPluginService(
     class Context {
       options() {
@@ -81,7 +70,19 @@ const http = (args, _options) => {
 let monkey_patch_fetch
 
 export const fetch = (url, _options) => {
-  const options = getOptions(url, _options)
+  const options = getOptions(
+    url,
+    Object.assign(
+      {
+        method: 'get',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+        }
+      },
+      _options
+    )
+  )
   if (monkey_patch_fetch) return monkey_patch_fetch(options)
   return http(createParams(options), options)
 }

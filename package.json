@@ -1,6 +1,6 @@
 {
   "name": "mfetch",
-  "version": "0.2.25",
+  "version": "0.2.26",
   "description": "",
   "main": "./lib",
   "scripts": {
@@ -25,10 +25,10 @@
   },
   "homepage": "",
   "dependencies": {
-    "super-plugin": "^0.1.0",
     "fetch-jsonp": "^1.0.3",
     "query-string": "^4.2.3",
     "recursive-iterator": "^2.0.3",
+    "super-plugin": "^0.1.0",
     "uri-templates": "^0.2.0"
   },
   "devDependencies": {
@@ -45,15 +45,15 @@
     "coveralls": "^2.11.4",
     "fs-extra": "^0.30.0",
     "isparta": "^4.0.0",
-    "jasmine": "2.4.x",
-    "jasmine-core": "2.4.x",
+    "jasmine": "^3.3.1",
+    "jasmine-core": "^3.3.0",
+    "karma-jasmine": "^2.0.1",
     "karma": "^1.1.0",
     "karma-benchmark": "^0.6.0",
     "karma-benchmark-reporter": "^0.1.1",
     "karma-chrome-launcher": "^2.0.0",
     "karma-coverage": "^1.0.0",
     "karma-firefox-launcher": "^1.0.0",
-    "karma-jasmine": "^1.0.2",
     "karma-mocha-reporter": "^2.0.4",
     "karma-phantomjs-launcher": "^1.0.0",
     "karma-safari-launcher": "^1.0.0",
