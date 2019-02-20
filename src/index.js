@@ -18,9 +18,9 @@ const getOptions = (url, options) => {
     }
   }
   if (isStr(url) || url instanceof URL) {
-    return {...defaults, url,...options }
+    return Object.assign(defaults,{url},options)
   } else if (isObj(url)) {
-    return {...defaults, ...url,...options }
+    return Object.assign(defaults,url,options)
   }
 
   return {}

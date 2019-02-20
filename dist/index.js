@@ -2079,10 +2079,17 @@ var extractParams = extractParams$1;
 var EXTENSIONS = []
 
 var getOptions = function (url, options) {
+  var defaults = {
+    method: 'get',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+    }
+  }
   if (isStr(url) || url instanceof URL) {
-    return Object.assign({ url: url }, options)
+    return Object.assign(defaults,{url: url},options)
   } else if (isObj(url)) {
-    return Object.assign(url, options)
+    return Object.assign(defaults,url,options)
   }
 
   return {}
@@ -2143,19 +2150,7 @@ var http = function (args, options) {
 var monkey_patch_fetch
 
 var fetch = function (url, _options) {
-  var options = getOptions(
-    url,
-    Object.assign(
-      {
-        method: 'get',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-        }
-      },
-      _options
-    )
-  )
+  var options = getOptions(url, _options)
   if (monkey_patch_fetch) return monkey_patch_fetch(options)
   return http(createParams(options), options)
 }
