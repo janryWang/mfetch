@@ -10,10 +10,17 @@ const { isFn, isObj, isStr, createSerializer, extractParams } = utils
 let EXTENSIONS = []
 
 const getOptions = (url, options) => {
+  const defaults = {
+    method: 'get',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+    }
+  }
   if (isStr(url) || url instanceof URL) {
-    return Object.assign({ url }, options)
+    return {...defaults, url,...options }
   } else if (isObj(url)) {
-    return Object.assign(url, options)
+    return {...defaults, ...url,...options }
   }
 
   return {}
@@ -70,19 +77,7 @@ const http = (args, options) => {
 let monkey_patch_fetch
 
 export const fetch = (url, _options) => {
-  const options = getOptions(
-    url,
-    Object.assign(
-      {
-        method: 'get',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-        }
-      },
-      _options
-    )
-  )
+  const options = getOptions(url, _options)
   if (monkey_patch_fetch) return monkey_patch_fetch(options)
   return http(createParams(options), options)
 }
